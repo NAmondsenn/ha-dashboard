@@ -128,23 +128,41 @@ views:
           {% set suf = 'th' if d in [11,12,13] else {1:'st',2:'nd',3:'rd'}.get(d % 10, 'th') %}
           {% set w = 'weather.forecast_home' %}
           {% set t = state_attr(w, 'temperature') %}
-          {% set conds = {'clear-night': 'Clear', 'cloudy': 'Cloudy', 'fog': 'Fog', 'hail': 'Hail', 'lightning': 'Lightning', 'lightning-rainy': 'Storms', 'partlycloudy': 'Partly cloudy', 'pouring': 'Pouring', 'rainy': 'Rain', 'snowy': 'Snow', 'snowy-rainy': 'Sleet', 'sunny': 'Sunny', 'windy': 'Windy', 'windy-variant': 'Windy', 'exceptional': 'Warning'} %}
-          # {{ now().strftime('%A') }}
-          {{ d }}{{ suf }} {{ now().strftime('%B') }}{% if t is number %} · {{ t | round | int }}° {{ conds.get(states(w), states(w)) }}{% endif %}
+          {% set c = states(w) %}
+          {% set conds = {'clear-night': ['Clear', 'weather-night'], 'cloudy': ['Cloudy', 'weather-cloudy'], 'fog': ['Fog', 'weather-fog'], 'hail': ['Hail', 'weather-hail'], 'lightning': ['Lightning', 'weather-lightning'], 'lightning-rainy': ['Storms', 'weather-lightning-rainy'], 'partlycloudy': ['Partly cloudy', 'weather-partly-cloudy'], 'pouring': ['Pouring', 'weather-pouring'], 'rainy': ['Rain', 'weather-rainy'], 'snowy': ['Snow', 'weather-snowy'], 'snowy-rainy': ['Sleet', 'weather-snowy-rainy'], 'sunny': ['Sunny', 'weather-sunny'], 'windy': ['Windy', 'weather-windy'], 'windy-variant': ['Windy', 'weather-windy-variant'], 'exceptional': ['Warning', 'alert-circle-outline']} %}
+          {% set cond = conds.get(c, [c, 'weather-cloudy']) %}
+          # Hi, Nathaniel
+
+          {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B') }}
+
+          {% if t is number %}<ha-icon icon="mdi:{{ cond[1] }}"></ha-icon> {{ t | round | int }}° {{ cond[0] }}{% endif %}
         card_mod:
           style:
             ha-markdown$: |
               h1 {
-                font-size: 2.8em !important;
+                font-size: 2.4em !important;
                 font-weight: 700 !important;
                 margin: 0 !important;
-                line-height: 1 !important;
+                line-height: 1.05 !important;
                 letter-spacing: -0.02em;
               }
-              p {
+              /* Date: small and grey under the greeting */
+              p:nth-of-type(1) {
+                font-size: 0.95em !important;
+                opacity: 0.55;
+                margin: 6px 0 0 0 !important;
+              }
+              /* Weather line */
+              p:nth-of-type(2) {
+                display: flex;
+                align-items: center;
+                gap: 8px;
                 font-size: 1.1em !important;
-                opacity: 0.6;
-                margin: 8px 0 0 0 !important;
+                opacity: 0.85;
+                margin: 14px 0 0 0 !important;
+              }
+              p:nth-of-type(2) ha-icon {
+                --mdc-icon-size: 26px;
               }
             .: |
               ha-card {
@@ -469,52 +487,6 @@ views:
                         box-shadow: none;
                         backdrop-filter: none;
                       }
-          - type: custom:mod-card
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.04);
-                  backdrop-filter: blur(12px);
-                  border: 1px solid var(--divider-color);
-                  border-radius: 12px;
-                  box-shadow: none;
-                  padding: 12px;
-                  overflow: hidden;
-                }
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Tasks
-                  icon: mdi:calendar-check
-                - type: todo-list
-                  entity: todo.todo_short
-                  display_order: none
-                  card_mod:
-                    style:
-                      .: |
-                        ha-card {
-                          background: none;
-                          border: none;
-                          box-shadow: none;
-                          padding: 0 !important;
-                        }
-                        ha-input {
-                          width: 100%;
-                          margin: 0 !important;
-                        }
-                        .empty {
-                          display: none !important;
-                        }
-                      ha-input$: |
-                        wa-input {
-                          --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
-                        }
-                        wa-input::part(base) {
-                          background: rgba(255, 255, 255, 0.04) !important;
-                          border-radius: 10px 10px 0 0;
-                        }
   - title: Planner
     path: planner
     theme: glass
