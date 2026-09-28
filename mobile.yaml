@@ -496,7 +496,7 @@ views:
                 border: none;
                 box-shadow: none;
                 padding-top: 12px !important;
-                padding-bottom: 40px !important;
+                padding-bottom: 24px !important;
               }
     footer:
       card:
