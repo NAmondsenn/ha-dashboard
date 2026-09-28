@@ -132,7 +132,7 @@ views:
           {% set conds = {'clear-night': ['Clear', 'weather-night'], 'cloudy': ['Cloudy', 'weather-cloudy'], 'fog': ['Fog', 'weather-fog'], 'hail': ['Hail', 'weather-hail'], 'lightning': ['Lightning', 'weather-lightning'], 'lightning-rainy': ['Storms', 'weather-lightning-rainy'], 'partlycloudy': ['Partly cloudy', 'weather-partly-cloudy'], 'pouring': ['Pouring', 'weather-pouring'], 'rainy': ['Rain', 'weather-rainy'], 'snowy': ['Snow', 'weather-snowy'], 'snowy-rainy': ['Sleet', 'weather-snowy-rainy'], 'sunny': ['Sunny', 'weather-sunny'], 'windy': ['Windy', 'weather-windy'], 'windy-variant': ['Windy', 'weather-windy-variant'], 'exceptional': ['Warning', 'alert-circle-outline']} %}
           {% set cond = conds.get(c, [c, 'weather-cloudy']) %}
           {% set h = now().hour %}
-          # Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else 'evening' }}, Nathaniel
+          # Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else 'evening' }},<br>Nathaniel
 
           {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B') }}
 
