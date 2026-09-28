@@ -253,20 +253,24 @@ views:
                     - type: tile
                       entity: sensor.bedroom_pve1_cpu_usage
                       name: CPU
-                      vertical: true
                       card_mod:
                         class: glass
                     - type: tile
                       entity: sensor.bedroom_pve1_memory_usage_percentage
                       name: RAM
-                      vertical: true
                       card_mod:
                         class: glass
+                - type: horizontal-stack
+                  cards:
                     - type: tile
                       entity: sensor.storage_local_lvm_storage_usage_percentage
                       name: Disk
                       icon: mdi:harddisk
-                      vertical: true
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.bedroom_pve1_uptime
+                      name: Uptime
                       card_mod:
                         class: glass
                 - type: heading
