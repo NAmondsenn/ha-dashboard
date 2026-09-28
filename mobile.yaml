@@ -253,18 +253,22 @@ views:
                     - type: tile
                       entity: sensor.bedroom_pve1_cpu_usage
                       name: CPU
+                      vertical: true
                       card_mod:
                         class: glass
                     - type: tile
                       entity: sensor.bedroom_pve1_memory_usage_percentage
                       name: RAM
+                      vertical: true
                       card_mod:
                         class: glass
-                - type: tile
-                  entity: sensor.bedroom_pve1_uptime
-                  name: Uptime
-                  card_mod:
-                    class: glass
+                    - type: tile
+                      entity: sensor.storage_local_lvm_storage_usage_percentage
+                      name: Disk
+                      icon: mdi:harddisk
+                      vertical: true
+                      card_mod:
+                        class: glass
                 - type: heading
                   heading: pve2
                   heading_style: subtitle
@@ -290,18 +294,11 @@ views:
                       icon: mdi:harddisk
                       card_mod:
                         class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.storage_pbs_storage_usage_percentage
-                      name: PBS datastore
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.storage_local_lvm_storage_usage_percentage
-                      name: local-lvm
-                      card_mod:
-                        class: glass
+                - type: tile
+                  entity: sensor.storage_pbs_storage_usage_percentage
+                  name: PBS datastore
+                  card_mod:
+                    class: glass
           - type: custom:mod-card
             card:
               type: vertical-stack
