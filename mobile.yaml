@@ -154,9 +154,8 @@ views:
     sections:
       - type: grid
         cards:
-          # One card that answers "is anything broken?"; lists problems only
           - type: markdown
-            content: |
+            content: >
               {% set svc = [
                 ['truenas', 'binary_sensor.truenas_status'],
                 ['nextcloud', 'binary_sensor.nextcloud_status'],
@@ -167,22 +166,52 @@ views:
                 ['pbs', 'binary_sensor.pbs_status'],
                 ['ntfy', 'binary_sensor.ntfy_status'],
               ] %}
+
               {% set ns = namespace(down=[], issues=[]) %}
-              {% for name, e in svc %}{% if not is_state(e, 'on') %}{% set ns.down = ns.down + [name] %}{% endif %}{% endfor %}
-              {% if ns.down %}{% set ns.issues = ns.issues + [ns.down | join(', ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] %}{% endif %}
-              {% if states('sensor.backups_failed_count') | int(0) > 0 %}{% set ns.issues = ns.issues + ['Backup check failing · [Healthchecks](https://healthchecks.io/)'] %}{% endif %}
-              {% for name, e in [['NAS', 'sensor.nas_pool_health'], ['Backups', 'sensor.backups_pool_health']] %}{% if states(e) | lower not in ['online', 'healthy', 'ok'] %}{% set ns.issues = ns.issues + [name ~ ' pool is ' ~ states(e)] %}{% endif %}{% endfor %}
-              {% set days = states('sensor.amondsen_uk_days_until_expiration') | int(999) %}
-              {% if days < 30 %}{% set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] %}{% endif %}
-              {% if is_state('update.nextcloud_amondsen_uk', 'on') %}{% set ns.issues = ns.issues + ['Nextcloud update available'] %}{% endif %}
+
+              {% for name, e in svc %}{% if not is_state(e, 'on') %}{% set
+              ns.down = ns.down + [name] %}{% endif %}{% endfor %}
+
+              {% if ns.down %}{% set ns.issues = ns.issues + [ns.down | join(',
+              ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] %}{%
+              endif %}
+
+              {% if states('sensor.backups_failed_count') | int(0) > 0 %}{% set
+              ns.issues = ns.issues + ['Backup check failing ·
+              [Healthchecks](https://healthchecks.io/)'] %}{% endif %}
+
+              {% for name, e in [['NAS', 'sensor.nas_pool_health'], ['Backups',
+              'sensor.backups_pool_health']] %}{% if states(e) | lower not in
+              ['online', 'healthy', 'ok'] %}{% set ns.issues = ns.issues + [name
+              ~ ' pool is ' ~ states(e)] %}{% endif %}{% endfor %}
+
+              {% set days = states('sensor.amondsen_uk_days_until_expiration') |
+              int(999) %}
+
+              {% if days < 30 %}{% set ns.issues = ns.issues + ['amondsen.uk
+              expires in ' ~ days ~ ' days'] %}{% endif %}
+
+              {% if is_state('update.nextcloud_amondsen_uk', 'on') %}{% set
+              ns.issues = ns.issues + ['Nextcloud update available'] %}{% endif
+              %}
+
               {% if ns.issues %}
-              ### <ha-icon icon="mdi:alert-circle"></ha-icon> {{ ns.issues | count }} {{ 'issue' if ns.issues | count == 1 else 'issues' }}
+
+              ### <ha-icon icon="mdi:alert-circle"></ha-icon> {{ ns.issues |
+              count }} {{ 'issue' if ns.issues | count == 1 else 'issues' }}
+
               {% for i in ns.issues %}
+
               - {{ i }}
+
               {% endfor %}
+
               {% else %}
+
               ### <ha-icon icon="mdi:check-circle"></ha-icon> All systems OK
+
               {{ svc | count }} services up · backups passing
+
               {% endif %}
             card_mod:
               class: glass
@@ -231,7 +260,6 @@ views:
                       name: RAM
                       card_mod:
                         class: glass
-                # Placeholder until pve2 is set up
                 - type: heading
                   heading: pve2
                   heading_style: subtitle
@@ -267,8 +295,6 @@ views:
                   name: PBS datastore
                   card_mod:
                     class: glass
-      - type: grid
-        cards:
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -425,6 +451,8 @@ views:
                         .bubble-button-card-container {
                           background: rgba(255, 255, 255, 0.06) !important;
                         }
+      - type: grid
+        cards: []
   - title: Home
     path: home
     theme: glass
@@ -436,22 +464,47 @@ views:
       card:
         type: markdown
         text_only: true
-        content: |
+        content: >
           {% set d = now().day %}
-          {% set suf = 'th' if d in [11,12,13] else {1:'st',2:'nd',3:'rd'}.get(d % 10, 'th') %}
+
+          {% set suf = 'th' if d in [11,12,13] else {1:'st',2:'nd',3:'rd'}.get(d
+          % 10, 'th') %}
+
           {% set w = 'weather.forecast_home' %}
+
           {% set t = state_attr(w, 'temperature') %}
+
           {% set c = states(w) %}
-          {% set conds = {'clear-night': ['Clear', 'weather-night'], 'cloudy': ['Cloudy', 'weather-cloudy'], 'fog': ['Fog', 'weather-fog'], 'hail': ['Hail', 'weather-hail'], 'lightning': ['Lightning', 'weather-lightning'], 'lightning-rainy': ['Storms', 'weather-lightning-rainy'], 'partlycloudy': ['Partly cloudy', 'weather-partly-cloudy'], 'pouring': ['Pouring', 'weather-pouring'], 'rainy': ['Rain', 'weather-rainy'], 'snowy': ['Snow', 'weather-snowy'], 'snowy-rainy': ['Sleet', 'weather-snowy-rainy'], 'sunny': ['Sunny', 'weather-sunny'], 'windy': ['Windy', 'weather-windy'], 'windy-variant': ['Windy', 'weather-windy-variant'], 'exceptional': ['Warning', 'alert-circle-outline']} %}
+
+          {% set conds = {'clear-night': ['Clear', 'weather-night'], 'cloudy':
+          ['Cloudy', 'weather-cloudy'], 'fog': ['Fog', 'weather-fog'], 'hail':
+          ['Hail', 'weather-hail'], 'lightning': ['Lightning',
+          'weather-lightning'], 'lightning-rainy': ['Storms',
+          'weather-lightning-rainy'], 'partlycloudy': ['Partly cloudy',
+          'weather-partly-cloudy'], 'pouring': ['Pouring', 'weather-pouring'],
+          'rainy': ['Rain', 'weather-rainy'], 'snowy': ['Snow',
+          'weather-snowy'], 'snowy-rainy': ['Sleet', 'weather-snowy-rainy'],
+          'sunny': ['Sunny', 'weather-sunny'], 'windy': ['Windy',
+          'weather-windy'], 'windy-variant': ['Windy', 'weather-windy-variant'],
+          'exceptional': ['Warning', 'alert-circle-outline']} %}
+
           {% set cond = conds.get(c, [c, 'weather-cloudy']) %}
+
           {% set h = now().hour %}
-          Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else 'evening' }},
+
+          Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else
+          'evening' }},
+
 
           # Nathaniel
 
-          {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B') }}
 
-          {% if t is number %}<ha-icon icon="mdi:{{ cond[1] }}"></ha-icon> {{ t | round | int }}° {{ cond[0] }}{% endif %}
+          {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B')
+          }}
+
+
+          {% if t is number %}<ha-icon icon="mdi:{{ cond[1] }}"></ha-icon> {{ t
+          | round | int }}° {{ cond[0] }}{% endif %}
         card_mod:
           style:
             ha-markdown$: |
@@ -589,7 +642,6 @@ views:
                     .bubble-button-card-container {
                       background: rgba(255, 255, 255, 0.06) !important;
                     }
-          # Fan placeholder, same as the desktop one until the fan is set up
           - type: custom:mod-card
             card_mod:
               style: |
@@ -645,7 +697,6 @@ views:
                       icon: mdi:application-outline
                       card_mod:
                         class: glass
-                # Everyday actions: three across is the most that keeps labels readable on a 360px phone
                 - type: horizontal-stack
                   cards:
                     - type: tile
@@ -687,7 +738,6 @@ views:
                           entity_id: button.windows_pc_lock
                       card_mod:
                         class: glass
-                # Destructive ones on their own row, both behind a confirmation
                 - type: horizontal-stack
                   cards:
                     - type: tile
@@ -718,8 +768,6 @@ views:
                           text: Shut down the PC?
                       card_mod:
                         class: glass
-      - type: grid
-        cards:
           - type: custom:bubble-card
             card_type: media-player
             entity: media_player.spotify_nathan
@@ -751,7 +799,6 @@ views:
               .bubble-play-pause-button {
                 background-color: rgba(255, 255, 255, 0.12) !important;
               }
-          # Today and tomorrow from every calendar; the full week is on Planner
           - type: custom:mod-card
             card_mod:
               style: |
@@ -798,6 +845,8 @@ views:
                         box-shadow: none;
                         backdrop-filter: none;
                       }
+      - type: grid
+        cards: []
   - title: Planner
     path: planner
     theme: glass
@@ -839,7 +888,6 @@ views:
     sections:
       - type: grid
         cards:
-          # Each list opens as a bubble pop-up (defined in the last section); the number is the todo entity's open-item count
           - type: custom:bubble-card
             card_type: button
             button_type: state
@@ -952,7 +1000,6 @@ views:
                       border-radius: 12px;
                       box-shadow: none;
                     }
-      # Pop-ups. Hidden until their button is tapped; swipe down or tap outside to close
       - type: grid
         cards:
           - type: vertical-stack
