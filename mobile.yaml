@@ -943,21 +943,6 @@ views:
                   name: PBS datastore
                   card_mod:
                     class: glass
-                # PC drives; these read unavailable while the PC is off
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.pc_c_free
-                      name: 'C: Free'
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.pc_d_free
-                      name: 'D: Free'
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
       - type: grid
         cards:
           - type: custom:mod-card
