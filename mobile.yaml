@@ -271,11 +271,6 @@ views:
                   card_type: separator
                   name: Storage
                   icon: mdi:nas
-                  sub_button:
-                    - icon: mdi:open-in-new
-                      tap_action:
-                        action: url
-                        url_path: https://192.168.0.40
                 - type: horizontal-stack
                   cards:
                     - type: tile
@@ -322,7 +317,7 @@ views:
                       name: Blocked
                       card_mod:
                         class: glass
-          # Only links with no other way in; Proxmox, TrueNAS and AdGuard open from pve1, Storage and the AdGuard tile
+          # Links; Proxmox and AdGuard already open from the pve1 heading and by holding the AdGuard tile
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -334,10 +329,23 @@ views:
                 - type: horizontal-stack
                   cards:
                     - type: tile
+                      entity: binary_sensor.truenas_status
+                      name: TrueNAS
+                      icon: mdi:nas
+                      hide_state: true
+                      color: none
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.40
+                      icon_tap_action:
+                        action: url
+                        url_path: https://192.168.0.40
+                      card_mod:
+                        class: glass
+                    - type: tile
                       entity: binary_sensor.pbs_status
                       name: PBS
                       icon: phu:proxmox
-                      vertical: true
                       hide_state: true
                       color: none
                       tap_action:
@@ -348,11 +356,12 @@ views:
                         url_path: https://192.168.0.45:8007
                       card_mod:
                         class: glass
+                - type: horizontal-stack
+                  cards:
                     - type: tile
                       entity: binary_sensor.nextcloud_status
                       name: Nextcloud
                       icon: phu:nextcloud
-                      vertical: true
                       hide_state: true
                       color: none
                       tap_action:
@@ -367,7 +376,6 @@ views:
                       entity: binary_sensor.homepage_status
                       name: Homepage
                       icon: mdi:view-dashboard-variant
-                      vertical: true
                       hide_state: true
                       color: none
                       tap_action:
