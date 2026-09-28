@@ -120,6 +120,7 @@ views:
     type: sections
     max_columns: 2
     header:
+      layout: start
       card:
         type: markdown
         text_only: true
@@ -127,6 +128,9 @@ views:
         card_mod:
           style:
             ha-markdown$: |
+              h1, p {
+                text-align: left !important;
+              }
               h1 {
                 font-size: 2.8em !important;
                 font-weight: 700 !important;
@@ -136,7 +140,7 @@ views:
               }
             .: |
               ha-card {
-                text-align: left;
+                text-align: left !important;
                 background: none;
                 border: none;
                 box-shadow: none;
@@ -292,6 +296,27 @@ views:
                       name: Blocked
                       card_mod:
                         class: glass
+                - type: heading
+                  heading: Speedtest
+                  heading_style: subtitle
+                  icon: mdi:speedometer
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.speedtest_download
+                      name: Download
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.speedtest_upload
+                      name: Upload
+                      card_mod:
+                        class: glass
+                - type: tile
+                  entity: sensor.speedtest_ping
+                  name: Ping
+                  card_mod:
+                    class: glass
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -407,6 +432,7 @@ views:
     type: sections
     max_columns: 2
     header:
+      layout: start
       card:
         type: markdown
         text_only: true
@@ -429,6 +455,9 @@ views:
         card_mod:
           style:
             ha-markdown$: |
+              h1, p {
+                text-align: left !important;
+              }
               /* Greeting: a quieter line above the name */
               p:nth-of-type(1) {
                 font-size: 1.75em !important;
@@ -452,6 +481,7 @@ views:
               /* Weather line */
               p:nth-of-type(3) {
                 display: flex;
+                justify-content: flex-start;
                 align-items: center;
                 gap: 8px;
                 font-size: 1.1em !important;
@@ -463,7 +493,7 @@ views:
               }
             .: |
               ha-card {
-                text-align: left;
+                text-align: left !important;
                 background: none;
                 border: none;
                 box-shadow: none;
@@ -559,6 +589,31 @@ views:
                     .bubble-button-card-container {
                       background: rgba(255, 255, 255, 0.06) !important;
                     }
+          # Fan placeholder, same as the desktop one until the fan is set up
+          - type: custom:mod-card
+            card_mod:
+              style: |
+                ha-card {
+                  background: rgba(255, 255, 255, 0.04);
+                  backdrop-filter: blur(12px);
+                  border: 1px solid var(--divider-color);
+                  border-radius: 12px;
+                  box-shadow: none;
+                  padding: 12px;
+                }
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Fan
+                  icon: mdi:fan
+                - type: custom:bubble-card
+                  card_type: button
+                  button_type: slider
+                  entity: light.bedroom_light
+                  show_icon: false
+                  show_name: false
           - type: custom:mod-card
             card_mod:
               style: |
@@ -750,6 +805,7 @@ views:
     type: sections
     max_columns: 2
     header:
+      layout: start
       card:
         type: markdown
         text_only: true
@@ -757,6 +813,9 @@ views:
         card_mod:
           style:
             ha-markdown$: |
+              h1, p {
+                text-align: left !important;
+              }
               h1 {
                 font-size: 2.8em !important;
                 font-weight: 700 !important;
@@ -766,7 +825,7 @@ views:
               }
             .: |
               ha-card {
-                text-align: left;
+                text-align: left !important;
                 background: none;
                 border: none;
                 box-shadow: none;
