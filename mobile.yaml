@@ -317,7 +317,6 @@ views:
                       name: Blocked
                       card_mod:
                         class: glass
-          # Links; Proxmox and AdGuard already open from the pve1 heading and by holding the AdGuard tile
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -386,8 +385,6 @@ views:
                         url_path: https://homepage.amondsen.uk
                       card_mod:
                         class: glass
-      - type: grid
-        cards: []
   - title: Home
     path: home
     theme: glass
@@ -783,8 +780,6 @@ views:
                         box-shadow: none;
                         backdrop-filter: none;
                       }
-      - type: grid
-        cards: []
   - title: Planner
     path: planner
     theme: glass
@@ -950,8 +945,6 @@ views:
                       border-radius: 12px;
                       box-shadow: none;
                     }
-      - type: grid
-        cards:
           - type: vertical-stack
             cards:
               - type: custom:bubble-card
