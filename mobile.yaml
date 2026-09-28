@@ -144,8 +144,8 @@ views:
                 background: none;
                 border: none;
                 box-shadow: none;
-                padding-top: 28px !important;
-                padding-bottom: 4px !important;
+                padding-top: 44px !important;
+                padding-bottom: 12px !important;
               }
     footer:
       card:
@@ -260,6 +260,11 @@ views:
                       name: RAM
                       card_mod:
                         class: glass
+                - type: tile
+                  entity: sensor.bedroom_pve1_uptime
+                  name: Uptime
+                  card_mod:
+                    class: glass
                 - type: heading
                   heading: pve2
                   heading_style: subtitle
@@ -285,11 +290,18 @@ views:
                       icon: mdi:harddisk
                       card_mod:
                         class: glass
-                - type: tile
-                  entity: sensor.storage_pbs_storage_usage_percentage
-                  name: PBS datastore
-                  card_mod:
-                    class: glass
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.storage_pbs_storage_usage_percentage
+                      name: PBS datastore
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.storage_local_lvm_storage_usage_percentage
+                      name: local-lvm
+                      card_mod:
+                        class: glass
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -482,8 +494,8 @@ views:
                 background: none;
                 border: none;
                 box-shadow: none;
-                padding-top: 28px !important;
-                padding-bottom: 4px !important;
+                padding-top: 44px !important;
+                padding-bottom: 24px !important;
               }
     footer:
       card:
@@ -524,16 +536,6 @@ views:
                 border-radius: 12px !important;
               }
           - type: custom:mod-card
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.04);
-                  backdrop-filter: blur(12px);
-                  border: 1px solid var(--divider-color);
-                  border-radius: 12px;
-                  box-shadow: none;
-                  padding: 12px;
-                }
             card:
               type: vertical-stack
               cards:
@@ -578,16 +580,6 @@ views:
                       background: rgba(255, 255, 255, 0.06) !important;
                     }
           - type: custom:mod-card
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.04);
-                  backdrop-filter: blur(12px);
-                  border: 1px solid var(--divider-color);
-                  border-radius: 12px;
-                  box-shadow: none;
-                  padding: 12px;
-                }
             card:
               type: vertical-stack
               cards:
@@ -602,16 +594,6 @@ views:
                   show_icon: false
                   show_name: false
           - type: custom:mod-card
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.04);
-                  backdrop-filter: blur(12px);
-                  border: 1px solid var(--divider-color);
-                  border-radius: 12px;
-                  box-shadow: none;
-                  padding: 8px 12px 12px;
-                }
             card:
               type: vertical-stack
               cards:
@@ -735,16 +717,6 @@ views:
                 background-color: rgba(255, 255, 255, 0.12) !important;
               }
           - type: custom:mod-card
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.04);
-                  backdrop-filter: blur(12px);
-                  border: 1px solid var(--divider-color);
-                  border-radius: 12px;
-                  box-shadow: none;
-                  padding: 8px 4px 4px;
-                }
             card:
               type: vertical-stack
               cards:
@@ -763,7 +735,7 @@ views:
                       show_location: false
                       accent_color: '#E4D80C'
                   days_to_show: 2
-                  background_color: transparent
+                  background_color: rgba(255, 255, 255, 0.04)
                   time_24h: true
                   day_font_size: 28px
                   weekday_font_size: 15px
@@ -776,9 +748,10 @@ views:
                   card_mod:
                     style: |
                       ha-card {
-                        border: none;
+                        backdrop-filter: blur(12px);
+                        border: 1px solid var(--divider-color);
+                        border-radius: 12px;
                         box-shadow: none;
-                        backdrop-filter: none;
                       }
   - title: Planner
     path: planner
@@ -811,8 +784,8 @@ views:
                 background: none;
                 border: none;
                 box-shadow: none;
-                padding-top: 28px !important;
-                padding-bottom: 4px !important;
+                padding-top: 44px !important;
+                padding-bottom: 12px !important;
               }
     footer:
       card:
