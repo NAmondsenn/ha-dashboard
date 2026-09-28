@@ -10,12 +10,12 @@ navbar-templates:
     mobile:
       mode: floating
     routes:
+      - url: /dashboard-mobile/homelab
+        icon: mdi:server
       - url: /dashboard-mobile/home
         icon: mdi:home
       - url: /dashboard-mobile/planner
         icon: mdi:notebook
-      - url: /dashboard-mobile/homelab
-        icon: mdi:server
       - icon: >
           [[[ return window.location.search.includes('disable_km') ? 'mdi:check'
           : 'mdi:pencil'; ]]]
@@ -113,6 +113,293 @@ navbar-templates:
 
       .icon.active { color: var(--primary-text-color); }
 views:
+  - title: Homelab
+    path: homelab
+    theme: glass
+    icon: mdi:server-network
+    type: sections
+    max_columns: 2
+    header:
+      card:
+        type: markdown
+        text_only: true
+        content: '# Homelab'
+        card_mod:
+          style:
+            ha-markdown$: |
+              h1 {
+                font-size: 2.8em !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+            .: |
+              ha-card {
+                text-align: left;
+                background: none;
+                border: none;
+                box-shadow: none;
+                padding-top: 28px !important;
+                padding-bottom: 4px !important;
+              }
+    footer:
+      card:
+        type: custom:navbar-card
+        template: mobile
+    sections:
+      - type: grid
+        cards:
+          # One card that answers "is anything broken?"; lists problems only
+          - type: markdown
+            content: |
+              {% set svc = [
+                ['truenas', 'binary_sensor.truenas_status'],
+                ['nextcloud', 'binary_sensor.nextcloud_status'],
+                ['vaultwarden', 'binary_sensor.vaultwarden_status'],
+                ['home-assistant', 'binary_sensor.home_assistant_status'],
+                ['adguard', 'binary_sensor.adguard_status'],
+                ['homepage', 'binary_sensor.homepage_status'],
+                ['pbs', 'binary_sensor.pbs_status'],
+                ['ntfy', 'binary_sensor.ntfy_status'],
+              ] %}
+              {% set ns = namespace(down=[], issues=[]) %}
+              {% for name, e in svc %}{% if not is_state(e, 'on') %}{% set ns.down = ns.down + [name] %}{% endif %}{% endfor %}
+              {% if ns.down %}{% set ns.issues = ns.issues + [ns.down | join(', ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] %}{% endif %}
+              {% if states('sensor.backups_failed_count') | int(0) > 0 %}{% set ns.issues = ns.issues + ['Backup check failing · [Healthchecks](https://healthchecks.io/)'] %}{% endif %}
+              {% for name, e in [['NAS', 'sensor.nas_pool_health'], ['Backups', 'sensor.backups_pool_health']] %}{% if states(e) | lower not in ['online', 'healthy', 'ok'] %}{% set ns.issues = ns.issues + [name ~ ' pool is ' ~ states(e)] %}{% endif %}{% endfor %}
+              {% set days = states('sensor.amondsen_uk_days_until_expiration') | int(999) %}
+              {% if days < 30 %}{% set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] %}{% endif %}
+              {% if is_state('update.nextcloud_amondsen_uk', 'on') %}{% set ns.issues = ns.issues + ['Nextcloud update available'] %}{% endif %}
+              {% if ns.issues %}
+              ### <ha-icon icon="mdi:alert-circle"></ha-icon> {{ ns.issues | count }} {{ 'issue' if ns.issues | count == 1 else 'issues' }}
+              {% for i in ns.issues %}
+              - {{ i }}
+              {% endfor %}
+              {% else %}
+              ### <ha-icon icon="mdi:check-circle"></ha-icon> All systems OK
+              {{ svc | count }} services up · backups passing
+              {% endif %}
+            card_mod:
+              class: glass
+              style:
+                ha-markdown$: |
+                  h3 {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 0 0 4px 0 !important;
+                    font-size: 1.15em !important;
+                  }
+                  p, ul {
+                    margin: 0 !important;
+                    opacity: 0.7;
+                  }
+                  ha-icon[icon="mdi:check-circle"] {
+                    color: var(--success-color, #4caf50);
+                  }
+                  ha-icon[icon="mdi:alert-circle"] {
+                    color: var(--error-color);
+                  }
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Proxmox
+                  icon: phu:proxmox
+                - type: heading
+                  heading: pve1
+                  heading_style: subtitle
+                  tap_action:
+                    action: url
+                    url_path: https://192.168.0.39:8006
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.bedroom_pve1_cpu_usage
+                      name: CPU
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.bedroom_pve1_memory_usage_percentage
+                      name: RAM
+                      card_mod:
+                        class: glass
+                # Placeholder until pve2 is set up
+                - type: heading
+                  heading: pve2
+                  heading_style: subtitle
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Storage
+                  icon: mdi:nas
+                  sub_button:
+                    - icon: mdi:open-in-new
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.40
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.nas_pool_free
+                      name: NAS Free
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.backups_pool_free
+                      name: Backups Free
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
+                - type: tile
+                  entity: sensor.storage_pbs_storage_usage_percentage
+                  name: PBS datastore
+                  card_mod:
+                    class: glass
+      - type: grid
+        cards:
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Network
+                  icon: mdi:lan
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: switch.adguard_home_protection
+                      name: AdGuard
+                      icon: phu:adguard
+                      color: green
+                      tap_action:
+                        action: toggle
+                      icon_hold_action:
+                        action: url
+                        url_path: http://192.168.0.23/
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.adguard_home_dns_queries_blocked_ratio
+                      name: Blocked
+                      card_mod:
+                        class: glass
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Open
+                  icon: mdi:open-in-new
+                - type: grid
+                  square: false
+                  columns: 2
+                  cards:
+                    - type: custom:bubble-card
+                      card_type: button
+                      button_type: name
+                      name: Proxmox
+                      icon: phu:proxmox
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.39:8006
+                      button_action:
+                        tap_action:
+                          action: url
+                          url_path: https://192.168.0.39:8006
+                      styles: |
+                        .bubble-button-card-container {
+                          background: rgba(255, 255, 255, 0.06) !important;
+                        }
+                    - type: custom:bubble-card
+                      card_type: button
+                      button_type: name
+                      name: TrueNAS
+                      icon: mdi:nas
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.40
+                      button_action:
+                        tap_action:
+                          action: url
+                          url_path: https://192.168.0.40
+                      styles: |
+                        .bubble-button-card-container {
+                          background: rgba(255, 255, 255, 0.06) !important;
+                        }
+                    - type: custom:bubble-card
+                      card_type: button
+                      button_type: name
+                      name: PBS
+                      icon: phu:proxmox
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.45:8007
+                      button_action:
+                        tap_action:
+                          action: url
+                          url_path: https://192.168.0.45:8007
+                      styles: |
+                        .bubble-button-card-container {
+                          background: rgba(255, 255, 255, 0.06) !important;
+                        }
+                    - type: custom:bubble-card
+                      card_type: button
+                      button_type: name
+                      name: AdGuard
+                      icon: phu:adguard
+                      tap_action:
+                        action: url
+                        url_path: http://192.168.0.23/
+                      button_action:
+                        tap_action:
+                          action: url
+                          url_path: http://192.168.0.23/
+                      styles: |
+                        .bubble-button-card-container {
+                          background: rgba(255, 255, 255, 0.06) !important;
+                        }
+                    - type: custom:bubble-card
+                      card_type: button
+                      button_type: name
+                      name: Nextcloud
+                      icon: phu:nextcloud
+                      tap_action:
+                        action: url
+                        url_path: https://nextcloud.amondsen.uk
+                      button_action:
+                        tap_action:
+                          action: url
+                          url_path: https://nextcloud.amondsen.uk
+                      styles: |
+                        .bubble-button-card-container {
+                          background: rgba(255, 255, 255, 0.06) !important;
+                        }
+                    - type: custom:bubble-card
+                      card_type: button
+                      button_type: name
+                      name: Homepage
+                      icon: mdi:view-dashboard-variant
+                      tap_action:
+                        action: url
+                        url_path: https://homepage.amondsen.uk
+                      button_action:
+                        tap_action:
+                          action: url
+                          url_path: https://homepage.amondsen.uk
+                      styles: |
+                        .bubble-button-card-container {
+                          background: rgba(255, 255, 255, 0.06) !important;
+                        }
   - title: Home
     path: home
     theme: glass
@@ -752,293 +1039,6 @@ views:
                         background: rgba(255, 255, 255, 0.04) !important;
                         border-radius: 10px 10px 0 0;
                       }
-  - title: Homelab
-    path: homelab
-    theme: glass
-    icon: mdi:server-network
-    type: sections
-    max_columns: 2
-    header:
-      card:
-        type: markdown
-        text_only: true
-        content: '# Homelab'
-        card_mod:
-          style:
-            ha-markdown$: |
-              h1 {
-                font-size: 2.8em !important;
-                font-weight: 700 !important;
-                margin: 0 !important;
-                line-height: 1 !important;
-                letter-spacing: -0.02em;
-              }
-            .: |
-              ha-card {
-                text-align: left;
-                background: none;
-                border: none;
-                box-shadow: none;
-                padding-top: 28px !important;
-                padding-bottom: 4px !important;
-              }
-    footer:
-      card:
-        type: custom:navbar-card
-        template: mobile
-    sections:
-      - type: grid
-        cards:
-          # One card that answers "is anything broken?"; lists problems only
-          - type: markdown
-            content: |
-              {% set svc = [
-                ['truenas', 'binary_sensor.truenas_status'],
-                ['nextcloud', 'binary_sensor.nextcloud_status'],
-                ['vaultwarden', 'binary_sensor.vaultwarden_status'],
-                ['home-assistant', 'binary_sensor.home_assistant_status'],
-                ['adguard', 'binary_sensor.adguard_status'],
-                ['homepage', 'binary_sensor.homepage_status'],
-                ['pbs', 'binary_sensor.pbs_status'],
-                ['ntfy', 'binary_sensor.ntfy_status'],
-              ] %}
-              {% set ns = namespace(down=[], issues=[]) %}
-              {% for name, e in svc %}{% if not is_state(e, 'on') %}{% set ns.down = ns.down + [name] %}{% endif %}{% endfor %}
-              {% if ns.down %}{% set ns.issues = ns.issues + [ns.down | join(', ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] %}{% endif %}
-              {% if states('sensor.backups_failed_count') | int(0) > 0 %}{% set ns.issues = ns.issues + ['Backup check failing · [Healthchecks](https://healthchecks.io/)'] %}{% endif %}
-              {% for name, e in [['NAS', 'sensor.nas_pool_health'], ['Backups', 'sensor.backups_pool_health']] %}{% if states(e) | lower not in ['online', 'healthy', 'ok'] %}{% set ns.issues = ns.issues + [name ~ ' pool is ' ~ states(e)] %}{% endif %}{% endfor %}
-              {% set days = states('sensor.amondsen_uk_days_until_expiration') | int(999) %}
-              {% if days < 30 %}{% set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] %}{% endif %}
-              {% if is_state('update.nextcloud_amondsen_uk', 'on') %}{% set ns.issues = ns.issues + ['Nextcloud update available'] %}{% endif %}
-              {% if ns.issues %}
-              ### <ha-icon icon="mdi:alert-circle"></ha-icon> {{ ns.issues | count }} {{ 'issue' if ns.issues | count == 1 else 'issues' }}
-              {% for i in ns.issues %}
-              - {{ i }}
-              {% endfor %}
-              {% else %}
-              ### <ha-icon icon="mdi:check-circle"></ha-icon> All systems OK
-              {{ svc | count }} services up · backups passing
-              {% endif %}
-            card_mod:
-              class: glass
-              style:
-                ha-markdown$: |
-                  h3 {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    margin: 0 0 4px 0 !important;
-                    font-size: 1.15em !important;
-                  }
-                  p, ul {
-                    margin: 0 !important;
-                    opacity: 0.7;
-                  }
-                  ha-icon[icon="mdi:check-circle"] {
-                    color: var(--success-color, #4caf50);
-                  }
-                  ha-icon[icon="mdi:alert-circle"] {
-                    color: var(--error-color);
-                  }
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Proxmox
-                  icon: phu:proxmox
-                - type: heading
-                  heading: pve1
-                  heading_style: subtitle
-                  tap_action:
-                    action: url
-                    url_path: https://192.168.0.39:8006
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.bedroom_pve1_cpu_usage
-                      name: CPU
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.bedroom_pve1_memory_usage_percentage
-                      name: RAM
-                      card_mod:
-                        class: glass
-                # Placeholder until pve2 is set up
-                - type: heading
-                  heading: pve2
-                  heading_style: subtitle
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Storage
-                  icon: mdi:nas
-                  sub_button:
-                    - icon: mdi:open-in-new
-                      tap_action:
-                        action: url
-                        url_path: https://192.168.0.40
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.nas_pool_free
-                      name: NAS Free
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.backups_pool_free
-                      name: Backups Free
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                - type: tile
-                  entity: sensor.storage_pbs_storage_usage_percentage
-                  name: PBS datastore
-                  card_mod:
-                    class: glass
-      - type: grid
-        cards:
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Network
-                  icon: mdi:lan
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: switch.adguard_home_protection
-                      name: AdGuard
-                      icon: phu:adguard
-                      color: green
-                      tap_action:
-                        action: toggle
-                      icon_hold_action:
-                        action: url
-                        url_path: http://192.168.0.23/
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.adguard_home_dns_queries_blocked_ratio
-                      name: Blocked
-                      card_mod:
-                        class: glass
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Open
-                  icon: mdi:open-in-new
-                - type: grid
-                  square: false
-                  columns: 2
-                  cards:
-                    - type: custom:bubble-card
-                      card_type: button
-                      button_type: name
-                      name: Proxmox
-                      icon: phu:proxmox
-                      tap_action:
-                        action: url
-                        url_path: https://192.168.0.39:8006
-                      button_action:
-                        tap_action:
-                          action: url
-                          url_path: https://192.168.0.39:8006
-                      styles: |
-                        .bubble-button-card-container {
-                          background: rgba(255, 255, 255, 0.06) !important;
-                        }
-                    - type: custom:bubble-card
-                      card_type: button
-                      button_type: name
-                      name: TrueNAS
-                      icon: mdi:nas
-                      tap_action:
-                        action: url
-                        url_path: https://192.168.0.40
-                      button_action:
-                        tap_action:
-                          action: url
-                          url_path: https://192.168.0.40
-                      styles: |
-                        .bubble-button-card-container {
-                          background: rgba(255, 255, 255, 0.06) !important;
-                        }
-                    - type: custom:bubble-card
-                      card_type: button
-                      button_type: name
-                      name: PBS
-                      icon: phu:proxmox
-                      tap_action:
-                        action: url
-                        url_path: https://192.168.0.45:8007
-                      button_action:
-                        tap_action:
-                          action: url
-                          url_path: https://192.168.0.45:8007
-                      styles: |
-                        .bubble-button-card-container {
-                          background: rgba(255, 255, 255, 0.06) !important;
-                        }
-                    - type: custom:bubble-card
-                      card_type: button
-                      button_type: name
-                      name: AdGuard
-                      icon: phu:adguard
-                      tap_action:
-                        action: url
-                        url_path: http://192.168.0.23/
-                      button_action:
-                        tap_action:
-                          action: url
-                          url_path: http://192.168.0.23/
-                      styles: |
-                        .bubble-button-card-container {
-                          background: rgba(255, 255, 255, 0.06) !important;
-                        }
-                    - type: custom:bubble-card
-                      card_type: button
-                      button_type: name
-                      name: Nextcloud
-                      icon: phu:nextcloud
-                      tap_action:
-                        action: url
-                        url_path: https://nextcloud.amondsen.uk
-                      button_action:
-                        tap_action:
-                          action: url
-                          url_path: https://nextcloud.amondsen.uk
-                      styles: |
-                        .bubble-button-card-container {
-                          background: rgba(255, 255, 255, 0.06) !important;
-                        }
-                    - type: custom:bubble-card
-                      card_type: button
-                      button_type: name
-                      name: Homepage
-                      icon: mdi:view-dashboard-variant
-                      tap_action:
-                        action: url
-                        url_path: https://homepage.amondsen.uk
-                      button_action:
-                        tap_action:
-                          action: url
-                          url_path: https://homepage.amondsen.uk
-                      styles: |
-                        .bubble-button-card-container {
-                          background: rgba(255, 255, 255, 0.06) !important;
-                        }
 background:
   opacity: 50
   alignment: center
