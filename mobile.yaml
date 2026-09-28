@@ -889,11 +889,12 @@ views:
                   card_type: separator
                   name: Proxmox
                   icon: phu:proxmox
-                  sub_button:
-                    - icon: mdi:open-in-new
-                      tap_action:
-                        action: url
-                        url_path: https://192.168.0.39:8006
+                - type: heading
+                  heading: pve1
+                  heading_style: subtitle
+                  tap_action:
+                    action: url
+                    url_path: https://192.168.0.39:8006
                 - type: horizontal-stack
                   cards:
                     - type: tile
@@ -906,6 +907,10 @@ views:
                       name: RAM
                       card_mod:
                         class: glass
+                # Placeholder until pve2 is set up
+                - type: heading
+                  heading: pve2
+                  heading_style: subtitle
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -938,6 +943,21 @@ views:
                   name: PBS datastore
                   card_mod:
                     class: glass
+                # PC drives; these read unavailable while the PC is off
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.pc_c_free
+                      name: 'C: Free'
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.pc_d_free
+                      name: 'D: Free'
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
       - type: grid
         cards:
           - type: custom:mod-card
