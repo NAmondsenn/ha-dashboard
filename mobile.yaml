@@ -132,7 +132,9 @@ views:
           {% set conds = {'clear-night': ['Clear', 'weather-night'], 'cloudy': ['Cloudy', 'weather-cloudy'], 'fog': ['Fog', 'weather-fog'], 'hail': ['Hail', 'weather-hail'], 'lightning': ['Lightning', 'weather-lightning'], 'lightning-rainy': ['Storms', 'weather-lightning-rainy'], 'partlycloudy': ['Partly cloudy', 'weather-partly-cloudy'], 'pouring': ['Pouring', 'weather-pouring'], 'rainy': ['Rain', 'weather-rainy'], 'snowy': ['Snow', 'weather-snowy'], 'snowy-rainy': ['Sleet', 'weather-snowy-rainy'], 'sunny': ['Sunny', 'weather-sunny'], 'windy': ['Windy', 'weather-windy'], 'windy-variant': ['Windy', 'weather-windy-variant'], 'exceptional': ['Warning', 'alert-circle-outline']} %}
           {% set cond = conds.get(c, [c, 'weather-cloudy']) %}
           {% set h = now().hour %}
-          # Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else 'evening' }},<br>Nathaniel
+          Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else 'evening' }},
+
+          # Nathaniel
 
           {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B') }}
 
@@ -140,22 +142,28 @@ views:
         card_mod:
           style:
             ha-markdown$: |
-              h1 {
-                font-size: 2.4em !important;
-                font-weight: 700 !important;
-                margin: 0 !important;
-                line-height: 1.05 !important;
-                letter-spacing: -0.02em;
-                text-wrap: balance;
-              }
-              /* Date: small and grey under the greeting */
+              /* Greeting: a quieter line above the name */
               p:nth-of-type(1) {
+                font-size: 1.25em !important;
+                font-weight: 500;
+                opacity: 0.65;
+                margin: 0 !important;
+              }
+              h1 {
+                font-size: 2.8em !important;
+                font-weight: 700 !important;
+                margin: 2px 0 0 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+              /* Date: small and grey under the name */
+              p:nth-of-type(2) {
                 font-size: 0.95em !important;
                 opacity: 0.55;
-                margin: 6px 0 0 0 !important;
+                margin: 10px 0 0 0 !important;
               }
               /* Weather line */
-              p:nth-of-type(2) {
+              p:nth-of-type(3) {
                 display: flex;
                 align-items: center;
                 gap: 8px;
@@ -163,7 +171,7 @@ views:
                 opacity: 0.85;
                 margin: 14px 0 0 0 !important;
               }
-              p:nth-of-type(2) ha-icon {
+              p:nth-of-type(3) ha-icon {
                 --mdc-icon-size: 26px;
               }
             .: |
