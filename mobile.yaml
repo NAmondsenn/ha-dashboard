@@ -409,6 +409,7 @@ views:
               .bubble-play-pause-button {
                 background-color: rgba(255, 255, 255, 0.12) !important;
               }
+          # Today and tomorrow from every calendar; the full week is on Planner
           - type: custom:mod-card
             card_mod:
               style: |
@@ -425,62 +426,20 @@ views:
               cards:
                 - type: custom:bubble-card
                   card_type: separator
-                  name: Events
-                  icon: mdi:calendar-star
+                  name: Up next
+                  icon: mdi:calendar-clock
                 - type: custom:calendar-card-pro
                   entities:
                     - entity: calendar.55namoamondsen_gmail_com
                       accent_color: home-assistant
-                      label: home-assistant
                     - entity: calendar.my_timetable
                       show_location: false
                       accent_color: '#193157'
-                      label: home-assistant
-                  days_to_show: 3
-                  background_color: transparent
-                  max_height: 240px
-                  time_24h: true
-                  day_font_size: 28px
-                  weekday_font_size: 15px
-                  month_font_size: 13px
-                  event_font_size: 15px
-                  time_font_size: 13px
-                  tap_action:
-                    action: url
-                    url_path: https://calendar.google.com
-                  card_mod:
-                    style: |
-                      ha-card {
-                        border: none;
-                        box-shadow: none;
-                        backdrop-filter: none;
-                      }
-          - type: custom:mod-card
-            card_mod:
-              style: |
-                ha-card {
-                  background: rgba(255, 255, 255, 0.04);
-                  backdrop-filter: blur(12px);
-                  border: 1px solid var(--divider-color);
-                  border-radius: 12px;
-                  box-shadow: none;
-                  padding: 8px 4px 4px;
-                }
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Shifts
-                  icon: phu:mcdonalds
-                - type: custom:calendar-card-pro
-                  entities:
                     - entity: calendar.work
                       show_location: false
                       accent_color: '#E4D80C'
-                  days_to_show: 30
+                  days_to_show: 2
                   background_color: transparent
-                  max_height: 150px
                   time_24h: true
                   day_font_size: 28px
                   weekday_font_size: 15px
