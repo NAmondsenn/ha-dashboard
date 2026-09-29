@@ -954,6 +954,9 @@ views:
                 bg_color: '#141414'
                 bg_opacity: '75'
                 bg_blur: '16'
+                # Desktop only: start the panel lower so it's about the height of the form
+                width_desktop: 480px
+                margin_top_desktop: calc(100vh - 600px)
                 open_action:
                   action: perform-action
                   perform_action: script.calendar_form_prepare
@@ -1004,6 +1007,14 @@ views:
                           state-badge,
                           .info {
                             display: none;
+                          }
+                        # HA pushes date + time to the right; left-align them and let the date fill
+                        .: |
+                          div.both {
+                            justify-content: flex-start !important;
+                          }
+                          ha-date-input {
+                            flex: 1;
                           }
                   - entity: input_select.event_duration
                     card_mod:
