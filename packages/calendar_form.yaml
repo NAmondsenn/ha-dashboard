@@ -5,14 +5,17 @@ input_text:
     name: Title
     icon: mdi:format-title
     max: 255
+    initial: ''
   event_description:
     name: Description
     icon: mdi:text
     max: 255
+    initial: ''
   event_location:
     name: Location
     icon: mdi:map-marker
     max: 255
+    initial: ''
 
 input_datetime:
   event_start:
@@ -74,8 +77,8 @@ script:
               entity_id: "{{ cal }}"
             data:
               summary: "{{ states('input_text.event_title') }}"
-              description: "{{ states('input_text.event_description') }}"
-              location: "{{ states('input_text.event_location') }}"
+              description: "{{ '' if states('input_text.event_description') in ['unknown', 'unavailable'] else states('input_text.event_description') }}"
+              location: "{{ '' if states('input_text.event_location') in ['unknown', 'unavailable'] else states('input_text.event_location') }}"
               start_date: "{{ as_datetime(start).date() }}"
               end_date: "{{ (as_datetime(start) + timedelta(days=1)).date() }}"
         else:
@@ -84,8 +87,8 @@ script:
               entity_id: "{{ cal }}"
             data:
               summary: "{{ states('input_text.event_title') }}"
-              description: "{{ states('input_text.event_description') }}"
-              location: "{{ states('input_text.event_location') }}"
+              description: "{{ '' if states('input_text.event_description') in ['unknown', 'unavailable'] else states('input_text.event_description') }}"
+              location: "{{ '' if states('input_text.event_location') in ['unknown', 'unavailable'] else states('input_text.event_location') }}"
               start_date_time: "{{ as_datetime(start).strftime('%Y-%m-%d %H:%M:%S') }}"
               end_date_time: >-
                 {{ (as_datetime(start) + timedelta(minutes=minutes | int)).strftime('%Y-%m-%d %H:%M:%S') }}

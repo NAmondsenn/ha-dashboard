@@ -779,11 +779,47 @@ views:
                   class: glass
                 entities:
                   - entity: input_text.event_title
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_text.event_description
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_text.event_location
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_datetime.event_start
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_select.event_duration
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_select.event_calendar
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
               - type: custom:bubble-card
                 card_type: button
                 button_type: name
@@ -1151,11 +1187,47 @@ views:
                   class: glass
                 entities:
                   - entity: input_text.event_title
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_text.event_description
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_text.event_location
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_datetime.event_start
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_select.event_duration
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
                   - entity: input_select.event_calendar
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
               - type: custom:bubble-card
                 card_type: button
                 button_type: name
