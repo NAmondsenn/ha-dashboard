@@ -1005,6 +1005,10 @@ views:
                           .info {
                             display: none;
                           }
+                          /* HA right-aligns date + time; spread them edge to edge instead */
+                          ::slotted(div.both) {
+                            justify-content: space-between !important;
+                          }
                   - entity: input_select.event_duration
                     card_mod:
                       style:
