@@ -1,0 +1,140 @@
+# Add event pop-up (both dashboards): the form's helpers and the scripts behind it.
+# Lives in config/packages/; configuration.yaml needs the packages line (see README steps).
+input_text:
+  event_title:
+    name: Title
+    icon: mdi:format-title
+    max: 255
+  event_description:
+    name: Description
+    icon: mdi:text
+    max: 255
+  event_location:
+    name: Location
+    icon: mdi:map-marker
+    max: 255
+
+input_datetime:
+  event_start:
+    name: Start
+    icon: mdi:clock-outline
+    has_date: true
+    has_time: true
+
+input_select:
+  event_duration:
+    name: Duration
+    icon: mdi:timer-outline
+    options:
+      - 30 min
+      - 1 hour
+      - 1.5 hours
+      - 2 hours
+      - 3 hours
+      - 4 hours
+      - 6 hours
+      - 8 hours
+      - All day
+    initial: 1 hour
+  event_calendar:
+    name: Calendar
+    icon: mdi:calendar
+    options:
+      - Nathaniel
+      - Work
+    initial: Nathaniel
+
+script:
+  calendar_form_add:
+    alias: Add event from form
+    icon: mdi:calendar-plus
+    mode: single
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ states('input_text.event_title') | trim in ['', 'unknown', 'unavailable'] }}"
+        then:
+          - stop: Add a title first
+            error: true
+      - variables:
+          cal: >-
+            {{ {'Nathaniel': 'calendar.55namoamondsen_gmail_com', 'Work': 'calendar.work'}
+               .get(states('input_select.event_calendar'), 'calendar.55namoamondsen_gmail_com') }}
+          dur: "{{ states('input_select.event_duration') }}"
+          start: "{{ states('input_datetime.event_start') }}"
+          minutes: >-
+            {{ {'30 min': 30, '1 hour': 60, '1.5 hours': 90, '2 hours': 120, '3 hours': 180,
+                '4 hours': 240, '6 hours': 360, '8 hours': 480}.get(states('input_select.event_duration'), 60) }}
+      - if:
+          - condition: template
+            value_template: "{{ dur == 'All day' }}"
+        then:
+          - action: calendar.create_event
+            target:
+              entity_id: "{{ cal }}"
+            data:
+              summary: "{{ states('input_text.event_title') }}"
+              description: "{{ states('input_text.event_description') }}"
+              location: "{{ states('input_text.event_location') }}"
+              start_date: "{{ as_datetime(start).date() }}"
+              end_date: "{{ (as_datetime(start) + timedelta(days=1)).date() }}"
+        else:
+          - action: calendar.create_event
+            target:
+              entity_id: "{{ cal }}"
+            data:
+              summary: "{{ states('input_text.event_title') }}"
+              description: "{{ states('input_text.event_description') }}"
+              location: "{{ states('input_text.event_location') }}"
+              start_date_time: "{{ as_datetime(start).strftime('%Y-%m-%d %H:%M:%S') }}"
+              end_date_time: >-
+                {{ (as_datetime(start) + timedelta(minutes=minutes | int)).strftime('%Y-%m-%d %H:%M:%S') }}
+      - action: script.calendar_form_reset
+
+  # Clears the form; start goes to the next full hour
+  calendar_form_reset:
+    alias: Reset event form
+    icon: mdi:restore
+    mode: single
+    sequence:
+      - action: input_text.set_value
+        target:
+          entity_id:
+            - input_text.event_title
+            - input_text.event_description
+            - input_text.event_location
+        data:
+          value: ""
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.event_start
+        data:
+          datetime: >-
+            {{ (now() + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S') }}
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.event_duration
+        data:
+          option: 1 hour
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.event_calendar
+        data:
+          option: Nathaniel
+
+  # Runs when the pop-up opens: a start time left in the past moves to the next full hour
+  calendar_form_prepare:
+    alias: Prepare event form
+    icon: mdi:calendar-refresh
+    mode: single
+    sequence:
+      - if:
+          - condition: template
+            value_template: "{{ state_attr('input_datetime.event_start', 'timestamp') | float(0) < as_timestamp(now()) }}"
+        then:
+          - action: input_datetime.set_datetime
+            target:
+              entity_id: input_datetime.event_start
+            data:
+              datetime: >-
+                {{ (now() + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0).strftime('%Y-%m-%d %H:%M:%S') }}

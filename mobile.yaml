@@ -726,11 +726,11 @@ views:
                   name: Up next
                   icon: mdi:calendar-clock
                   sub_button:
-                    - entity: script.add_calendar_event
-                      icon: mdi:calendar-plus
+                    - icon: mdi:calendar-plus
                       show_background: true
                       tap_action:
-                        action: more-info
+                        action: navigate
+                        navigation_path: '#add-event'
                 - type: custom:calendar-card-pro
                   entities:
                     - entity: calendar.55namoamondsen_gmail_com
@@ -760,6 +760,49 @@ views:
                         border-radius: 12px;
                         box-shadow: none;
                       }
+          # Add event pop-up; opened by the + on Up next and the Add event button on Planner
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#add-event'
+                name: Add event
+                icon: mdi:calendar-plus
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+                open_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_prepare
+              - type: entities
+                card_mod:
+                  class: glass
+                entities:
+                  - entity: input_text.event_title
+                  - entity: input_text.event_description
+                  - entity: input_text.event_location
+                  - entity: input_datetime.event_start
+                  - entity: input_select.event_duration
+                  - entity: input_select.event_calendar
+              - type: custom:bubble-card
+                card_type: button
+                button_type: name
+                name: Add to calendar
+                icon: mdi:calendar-check
+                tap_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_add
+                button_action:
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.calendar_form_add
+                styles: |
+                  .bubble-button-card-container {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    backdrop-filter: blur(12px);
+                    border: 1px solid var(--divider-color);
+                    border-radius: 12px !important;
+                  }
   - title: Planner
     path: planner
     theme: glass
@@ -896,15 +939,15 @@ views:
           - type: custom:bubble-card
             card_type: button
             button_type: name
-            entity: script.add_calendar_event
             name: Add event
             icon: mdi:calendar-plus
-            show_state: false
             tap_action:
-              action: more-info
+              action: navigate
+              navigation_path: '#add-event'
             button_action:
               tap_action:
-                action: more-info
+                action: navigate
+                navigation_path: '#add-event'
             grid_options:
               columns: 12
             styles: |
@@ -1089,6 +1132,49 @@ views:
                         background: rgba(255, 255, 255, 0.04) !important;
                         border-radius: 10px 10px 0 0;
                       }
+          # Add event pop-up; opened by the + on Up next and the Add event button on Planner
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#add-event'
+                name: Add event
+                icon: mdi:calendar-plus
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+                open_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_prepare
+              - type: entities
+                card_mod:
+                  class: glass
+                entities:
+                  - entity: input_text.event_title
+                  - entity: input_text.event_description
+                  - entity: input_text.event_location
+                  - entity: input_datetime.event_start
+                  - entity: input_select.event_duration
+                  - entity: input_select.event_calendar
+              - type: custom:bubble-card
+                card_type: button
+                button_type: name
+                name: Add to calendar
+                icon: mdi:calendar-check
+                tap_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_add
+                button_action:
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.calendar_form_add
+                styles: |
+                  .bubble-button-card-container {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    backdrop-filter: blur(12px);
+                    border: 1px solid var(--divider-color);
+                    border-radius: 12px !important;
+                  }
 background:
   opacity: 50
   alignment: center
