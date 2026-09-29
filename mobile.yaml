@@ -771,9 +771,6 @@ views:
                 bg_color: '#141414'
                 bg_opacity: '75'
                 bg_blur: '16'
-                # Desktop only: start the panel lower so it's about the height of the form
-                width_desktop: 480px
-                margin_top_desktop: calc(100vh - 600px)
                 open_action:
                   action: perform-action
                   perform_action: script.calendar_form_prepare
@@ -1206,9 +1203,6 @@ views:
                 bg_color: '#141414'
                 bg_opacity: '75'
                 bg_blur: '16'
-                # Desktop only: start the panel lower so it's about the height of the form
-                width_desktop: 480px
-                margin_top_desktop: calc(100vh - 600px)
                 open_action:
                   action: perform-action
                   perform_action: script.calendar_form_prepare
