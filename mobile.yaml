@@ -536,6 +536,37 @@ views:
                 border: 1px solid var(--divider-color);
                 border-radius: 12px !important;
               }
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.spotify_nathan
+            name: Spotify
+            card_layout: large
+            grid_options:
+              rows: auto
+            button_action:
+              tap_action:
+                action: url
+                url_path: https://open.spotify.com
+            styles: |
+              .bubble-media-player-container {
+                height: 110px !important;
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+              /* Square cover instead of the default small circle */
+              .bubble-icon-container,
+              .bubble-entity-picture {
+                width: 86px !important;
+                height: 86px !important;
+                min-width: 86px !important;
+                border-radius: 8px !important;
+              }
+              /* Blue pause button clashes with the monochrome look */
+              .bubble-play-pause-button {
+                background-color: rgba(255, 255, 255, 0.12) !important;
+              }
           - type: custom:mod-card
             card:
               type: vertical-stack
@@ -686,37 +717,6 @@ views:
                           text: Shut down the PC?
                       card_mod:
                         class: glass
-          - type: custom:bubble-card
-            card_type: media-player
-            entity: media_player.spotify_nathan
-            name: Spotify
-            card_layout: large
-            grid_options:
-              rows: auto
-            button_action:
-              tap_action:
-                action: url
-                url_path: https://open.spotify.com
-            styles: |
-              .bubble-media-player-container {
-                height: 110px !important;
-                background: rgba(255, 255, 255, 0.04) !important;
-                backdrop-filter: blur(12px);
-                border: 1px solid var(--divider-color);
-                border-radius: 12px !important;
-              }
-              /* Square cover instead of the default small circle */
-              .bubble-icon-container,
-              .bubble-entity-picture {
-                width: 86px !important;
-                height: 86px !important;
-                min-width: 86px !important;
-                border-radius: 8px !important;
-              }
-              /* Blue pause button clashes with the monochrome look */
-              .bubble-play-pause-button {
-                background-color: rgba(255, 255, 255, 0.12) !important;
-              }
           - type: custom:mod-card
             card:
               type: vertical-stack

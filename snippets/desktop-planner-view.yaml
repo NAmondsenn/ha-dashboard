@@ -1,0 +1,384 @@
+title: Planner
+path: planner
+theme: glass
+icon: mdi:notebook
+type: sections
+max_columns: 4
+footer:
+  card:
+    type: custom:navbar-card
+    template: default
+sections:
+  - type: grid
+    cards:
+      - type: markdown
+        text_only: true
+        content: '# Planner'
+        grid_options:
+          rows: 3.5
+          columns: 12
+        card_mod:
+          style:
+            ha-markdown$: |
+              h1 {
+                font-size: 4em !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+            .: |
+              ha-card {
+                text-align: left;
+                background: none;
+                border: none;
+                box-shadow: none;
+                padding-top: 70px;
+              }
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: custom:bubble-card
+            card_type: separator
+            name: Notepad
+            icon: mdi:note-text
+          - type: todo-list
+            entity: todo.notepad
+            display_order: none
+            card_mod:
+              class: glass
+              style:
+                ha-check-list-item$: |
+                  ha-checkbox {
+                    display: none !important;
+                  }
+                .: |
+                  ha-card {
+                    padding: 0 0 12px 0 !important;
+                    min-height: 1000px;
+                  }
+                  .header {
+                    display: none !important;
+                  }
+                  .empty {
+                    display: none !important;
+                  }
+                ha-input$: |
+                  wa-input {
+                    --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                  }
+                  wa-input::part(base) {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    border-radius: 10px 10px 0 0;
+                  }
+  - type: grid
+    cards:
+      - type: markdown
+        content: '&nbsp;'
+        grid_options:
+          columns: 12
+          rows: 3.5
+        card_mod:
+          style: |
+            ha-card {
+              background: none;
+              border: none;
+              box-shadow: none;
+              backdrop-filter: none;
+            }
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: custom:bubble-card
+            card_type: separator
+            name: To Do
+            icon: mdi:calendar-check
+          - type: todo-list
+            entity: todo.todo_long
+            display_order: none
+            card_mod:
+              class: glass
+              style:
+                .: |
+                  ha-card {
+                    padding: 0 0 12px 0 !important;
+                    min-height: 1000px;
+                  }
+                  ha-input {
+                    width: 100%;
+                    margin: 0 !important;
+                  }
+                  .empty {
+                    display: none !important;
+                  }
+                ha-input$: |
+                  wa-input {
+                    --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                  }
+                  wa-input::part(base) {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    border-radius: 10px 10px 0 0;
+                  }
+  - type: grid
+    cards:
+      - type: markdown
+        content: '&nbsp;'
+        grid_options:
+          columns: 12
+          rows: 3.5
+        card_mod:
+          style: |
+            ha-card {
+              background: none;
+              border: none;
+              box-shadow: none;
+              backdrop-filter: none;
+            }
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: custom:bubble-card
+            card_type: separator
+            name: Uni Work
+            icon: mdi:school
+          - type: todo-list
+            entity: todo.uni_work
+            display_order: none
+            card_mod:
+              class: glass
+              style:
+                .: |
+                  ha-card {
+                    padding: 0 0 12px 0 !important;
+                    min-height: 470px;
+                  }
+                  ha-input {
+                    width: 100%;
+                    margin: 0 !important;
+                  }
+                  .empty {
+                    display: none !important;
+                  }
+                ha-input$: |
+                  wa-input {
+                    --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                  }
+                  wa-input::part(base) {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    border-radius: 10px 10px 0 0;
+                  }
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: custom:bubble-card
+            card_type: separator
+            name: Shopping
+            icon: mdi:cart
+          - type: todo-list
+            entity: todo.shopping_list
+            display_order: none
+            card_mod:
+              class: glass
+              style:
+                .: |
+                  ha-card {
+                    padding: 0 0 12px 0 !important;
+                    min-height: 470px;
+                  }
+                  ha-input {
+                    width: 100%;
+                    margin: 0 !important;
+                  }
+                  .empty {
+                    display: none !important;
+                  }
+                ha-input$: |
+                  wa-input {
+                    --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                  }
+                  wa-input::part(base) {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    border-radius: 10px 10px 0 0;
+                  }
+  - type: grid
+    cards:
+      - type: markdown
+        text_only: true
+        content: >-
+          {% set d = now().day %}
+
+          {% set suf = 'th' if d in [11,12,13] else
+          {1:'st',2:'nd',3:'rd'}.get(d % 10, 'th') %}
+
+          # {{ now().strftime('%H:%M') }}
+
+          {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B
+          %Y') }}
+        grid_options:
+          rows: 3.5
+          columns: 12
+        card_mod:
+          style:
+            ha-markdown$: |
+              h1 {
+                font-size: 6.5em !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+              p {
+                font-size: 1.25em !important;
+                opacity: 0.6;
+                margin: 10px 0 0 0 !important;
+              }
+            .: |
+              ha-card {
+                text-align: right;
+                background: none;
+                border: none;
+                box-shadow: none;
+                padding-top: 30px;
+              }
+      - type: grid
+        square: false
+        columns: 1
+        cards:
+          - type: custom:bubble-card
+            card_type: separator
+            name: This Week
+            icon: mdi:calendar
+            sub_button:
+              - icon: mdi:calendar-plus
+                show_background: true
+                tap_action:
+                  action: navigate
+                  navigation_path: '#add-event'
+          - type: custom:calendar-card-pro
+            entities:
+              - entity: calendar.my_timetable
+                show_location: true
+                accent_color: '#193157'
+              - entity: calendar.55namoamondsen_gmail_com
+                accent_color: home-assistant
+              - entity: calendar.work
+                show_location: false
+                accent_color: '#E4D80C'
+            days_to_show: 7
+            background_color: rgba(255, 255, 255, 0.04)
+            time_24h: true
+            tap_action:
+              action: url
+              url_path: https://calendar.google.com
+            card_mod:
+              style: |
+                ha-card {
+                  backdrop-filter: blur(12px);
+                  border: 1px solid var(--divider-color);
+                  border-radius: 12px;
+                  box-shadow: none;
+                  min-height: 1000px;
+                }
+      # Add event pop-up; opened by the + on the This Week title
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#add-event'
+            name: Add event
+            icon: mdi:calendar-plus
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
+            open_action:
+              action: perform-action
+              perform_action: script.calendar_form_prepare
+          - type: entities
+            card_mod:
+              class: glass
+            entities:
+              - entity: input_text.event_title
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+                    # Hide HA's grey "(empty value)" placeholder
+                    ha-input $: |
+                      wa-input::part(input)::placeholder {
+                        color: transparent !important;
+                      }
+              - entity: input_text.event_description
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+                    # Hide HA's grey "(empty value)" placeholder
+                    ha-input $: |
+                      wa-input::part(input)::placeholder {
+                        color: transparent !important;
+                      }
+              - entity: input_text.event_location
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+                    # Hide HA's grey "(empty value)" placeholder
+                    ha-input $: |
+                      wa-input::part(input)::placeholder {
+                        color: transparent !important;
+                      }
+              - entity: input_datetime.event_start
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge,
+                      .info {
+                        display: none;
+                      }
+                      /* HA right-aligns date + time; spread them edge to edge instead */
+                      ::slotted(div.both) {
+                        justify-content: space-between !important;
+                      }
+              - entity: input_select.event_duration
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+              - entity: input_select.event_calendar
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Add to calendar
+            icon: mdi:calendar-check
+            tap_action:
+              action: perform-action
+              perform_action: script.calendar_form_add
+            button_action:
+              tap_action:
+                action: perform-action
+                perform_action: script.calendar_form_add
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }

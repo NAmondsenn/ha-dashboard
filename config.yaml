@@ -1480,6 +1480,12 @@ views:
                 card_type: separator
                 name: This Week
                 icon: mdi:calendar
+                sub_button:
+                  - icon: mdi:calendar-plus
+                    show_background: true
+                    tap_action:
+                      action: navigate
+                      navigation_path: '#add-event'
               - type: custom:calendar-card-pro
                 entities:
                   - entity: calendar.my_timetable
@@ -1505,6 +1511,105 @@ views:
                       box-shadow: none;
                       min-height: 1000px;
                     }
+          # Add event pop-up; opened by the + on the This Week title
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#add-event'
+                name: Add event
+                icon: mdi:calendar-plus
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+                open_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_prepare
+              - type: entities
+                card_mod:
+                  class: glass
+                entities:
+                  - entity: input_text.event_title
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_text.event_description
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_text.event_location
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_datetime.event_start
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge,
+                          .info {
+                            display: none;
+                          }
+                          /* HA right-aligns date + time; spread them edge to edge instead */
+                          ::slotted(div.both) {
+                            justify-content: space-between !important;
+                          }
+                  - entity: input_select.event_duration
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                  - entity: input_select.event_calendar
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+              - type: custom:bubble-card
+                card_type: button
+                button_type: name
+                name: Add to calendar
+                icon: mdi:calendar-check
+                tap_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_add
+                button_action:
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.calendar_form_add
+                styles: |
+                  .bubble-button-card-container {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    backdrop-filter: blur(12px);
+                    border: 1px solid var(--divider-color);
+                    border-radius: 12px !important;
+                  }
 background:
   opacity: 50
   alignment: center
