@@ -822,14 +822,6 @@ views:
                           .info {
                             display: none;
                           }
-                        # HA pushes date + time to the right; left-align them and let the date fill
-                        .: |
-                          div.both {
-                            justify-content: flex-start !important;
-                          }
-                          ha-date-input {
-                            flex: 1;
-                          }
                   - entity: input_select.event_duration
                     card_mod:
                       style:
@@ -1253,14 +1245,6 @@ views:
                           state-badge,
                           .info {
                             display: none;
-                          }
-                        # HA pushes date + time to the right; left-align them and let the date fill
-                        .: |
-                          div.both {
-                            justify-content: flex-start !important;
-                          }
-                          ha-date-input {
-                            flex: 1;
                           }
                   - entity: input_select.event_duration
                     card_mod:
