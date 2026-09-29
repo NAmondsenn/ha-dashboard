@@ -725,6 +725,12 @@ views:
                   card_type: separator
                   name: Up next
                   icon: mdi:calendar-clock
+                  sub_button:
+                    - entity: script.add_calendar_event
+                      icon: mdi:calendar-plus
+                      show_background: true
+                      tap_action:
+                        action: more-info
                 - type: custom:calendar-card-pro
                   entities:
                     - entity: calendar.55namoamondsen_gmail_com
@@ -880,6 +886,27 @@ views:
                 navigation_path: '#notepad'
             grid_options:
               columns: 6
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            entity: script.add_calendar_event
+            name: Add event
+            icon: mdi:calendar-plus
+            show_state: false
+            tap_action:
+              action: more-info
+            button_action:
+              tap_action:
+                action: more-info
+            grid_options:
+              columns: 12
             styles: |
               .bubble-button-card-container {
                 background: rgba(255, 255, 255, 0.04) !important;
