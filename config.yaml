@@ -1237,12 +1237,24 @@ views:
                   card_type: separator
                   name: Fan
                   icon: mdi:fan
+                # Placeholder until the replacement fan arrives: not linked to anything
                 - type: custom:bubble-card
                   card_type: button
-                  button_type: slider
-                  entity: light.bedroom_light
-                  show_icon: false
-                  show_name: false
+                  button_type: name
+                  name: No fan yet
+                  icon: mdi:fan-off
+                  tap_action:
+                    action: none
+                  button_action:
+                    tap_action:
+                      action: none
+                  styles: |
+                    .bubble-button-card-container {
+                      background: rgba(255, 255, 255, 0.06) !important;
+                    }
+                    .bubble-name {
+                      opacity: 0.6;
+                    }
   - title: Planner
     path: planner
     theme: glass
