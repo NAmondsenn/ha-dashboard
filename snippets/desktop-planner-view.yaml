@@ -252,12 +252,25 @@ sections:
             card_type: separator
             name: This Week
             icon: mdi:calendar
-            sub_button:
-              - icon: mdi:calendar-plus
-                show_background: true
-                tap_action:
-                  action: navigate
-                  navigation_path: '#add-event'
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Add event
+            icon: mdi:calendar-plus
+            tap_action:
+              action: navigate
+              navigation_path: '#add-event'
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#add-event'
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
           - type: custom:calendar-card-pro
             entities:
               - entity: calendar.my_timetable
@@ -281,9 +294,9 @@ sections:
                   border: 1px solid var(--divider-color);
                   border-radius: 12px;
                   box-shadow: none;
-                  min-height: 1000px;
+                  min-height: 935px;
                 }
-      # Add event pop-up; opened by the + on the This Week title
+      # Add event pop-up; opened by the Add event button above This Week
       - type: vertical-stack
         cards:
           - type: custom:bubble-card
