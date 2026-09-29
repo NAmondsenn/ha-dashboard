@@ -971,7 +971,7 @@ views:
                         # Hide HA's grey "(empty value)" placeholder
                         ha-input $: |
                           wa-input::part(input)::placeholder {
-                            color: transparent;
+                            color: transparent !important;
                           }
                   - entity: input_text.event_description
                     card_mod:
@@ -983,7 +983,7 @@ views:
                         # Hide HA's grey "(empty value)" placeholder
                         ha-input $: |
                           wa-input::part(input)::placeholder {
-                            color: transparent;
+                            color: transparent !important;
                           }
                   - entity: input_text.event_location
                     card_mod:
@@ -995,7 +995,7 @@ views:
                         # Hide HA's grey "(empty value)" placeholder
                         ha-input $: |
                           wa-input::part(input)::placeholder {
-                            color: transparent;
+                            color: transparent !important;
                           }
                   - entity: input_datetime.event_start
                     card_mod:
