@@ -44,9 +44,13 @@ fields:
     name: Calendar
     default: calendar.55namoamondsen_gmail_com
     selector:
-      entity:
-        filter:
-          domain: calendar
+      select:
+        mode: list
+        options:
+          - label: Nathaniel
+            value: calendar.55namoamondsen_gmail_com
+          - label: Work
+            value: calendar.work
 sequence:
   - variables:
       cal: "{{ calendar | default('calendar.55namoamondsen_gmail_com', true) }}"
