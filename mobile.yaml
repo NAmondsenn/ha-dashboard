@@ -785,12 +785,22 @@ views:
                           state-badge {
                             display: none;
                           }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent;
+                          }
                   - entity: input_text.event_description
                     card_mod:
                       style:
                         hui-generic-entity-row $: |
                           state-badge {
                             display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent;
                           }
                   - entity: input_text.event_location
                     card_mod:
@@ -799,11 +809,17 @@ views:
                           state-badge {
                             display: none;
                           }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent;
+                          }
                   - entity: input_datetime.event_start
                     card_mod:
                       style:
                         hui-generic-entity-row $: |
-                          state-badge {
+                          state-badge,
+                          .info {
                             display: none;
                           }
                   - entity: input_select.event_duration
@@ -1193,12 +1209,22 @@ views:
                           state-badge {
                             display: none;
                           }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent;
+                          }
                   - entity: input_text.event_description
                     card_mod:
                       style:
                         hui-generic-entity-row $: |
                           state-badge {
                             display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent;
                           }
                   - entity: input_text.event_location
                     card_mod:
@@ -1207,11 +1233,17 @@ views:
                           state-badge {
                             display: none;
                           }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent;
+                          }
                   - entity: input_datetime.event_start
                     card_mod:
                       style:
                         hui-generic-entity-row $: |
-                          state-badge {
+                          state-badge,
+                          .info {
                             display: none;
                           }
                   - entity: input_select.event_duration
