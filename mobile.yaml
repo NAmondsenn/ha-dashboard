@@ -1,0 +1,1335 @@
+swipe_nav:
+  wrapping: false
+  animate: swipe
+kiosk_mode:
+  kiosk: true
+navbar-templates:
+  mobile:
+    desktop:
+      position: bottom
+    mobile:
+      mode: floating
+    routes:
+      - url: /dashboard-mobile/homelab
+        icon: mdi:server
+      - url: /dashboard-mobile/home
+        icon: mdi:home
+      - url: /dashboard-mobile/planner
+        icon: mdi:notebook
+      - icon: |
+          [[[
+            // First load of a session only (app opened, new tab): land on the right
+            // dashboard's Home. Phones get the phone dashboard, wider screens the PC one.
+            // HA can't pick a start page or a per-device default, so it's done here.
+            const editing = window.location.search.includes('disable_km');
+            if (!editing && !sessionStorage.getItem('ha-landed')) {
+              sessionStorage.setItem('ha-landed', '1');
+              const base = window.matchMedia('(max-width: 768px)').matches
+                ? '/dashboard-mobile' : '/dashboard-home';
+              const target = base + '/home';
+              if (window.location.pathname !== target) {
+                setTimeout(() => {
+                  history.replaceState(null, '', target);
+                  window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: true } }));
+                }, 0);
+              }
+            }
+            return editing ? 'mdi:check' : 'mdi:pencil';
+          ]]]
+        tap_action:
+          action: custom-js-action
+          code: |
+            [[[
+              // Pencil enters edit mode with kiosk off; tick reloads the clean URL to restore kiosk.
+              // Also the only way out of kiosk on the phone, since kiosk hides the sidebar
+              const editing = window.location.search.includes('disable_km');
+              window.location.href = window.location.pathname + (editing ? '' : '?disable_km&edit=1');
+            ]]]
+    styles: >
+      /* Same pill as the desktop navbar, with slightly bigger touch targets */
+
+      .navbar {
+        --navbar-route-icon-size: 22px;
+      }
+
+      .navbar-card.desktop.bottom {
+        margin-bottom: 20px !important;
+      }
+
+      .navbar-card {
+        padding: 4px 6px !important;
+        gap: 4px !important;
+      }
+
+      .route {
+        padding: 0 !important;
+      }
+
+      .button {
+        width: 48px !important;
+        height: 44px !important;
+      }
+
+
+      /* Hairline before the edit button so it doesn't read as another view;
+         drawn inside the item's own box so the route can't clip it */
+      .route:last-child {
+        position: relative;
+        margin-left: 2px;
+        padding-left: 7px !important;
+      }
+
+      .route:last-child::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 25%;
+        bottom: 25%;
+        width: 1px;
+        background: var(--secondary-text-color);
+        opacity: 0.35;
+      }
+
+
+      /* Glass pill; 0.08 matches the nested tiles, which stack two 0.04 layers
+      */
+
+      .navbar-card {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--divider-color) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+      }
+
+
+      /* Drop the filled square; the underline marks the active tab instead */
+
+      .button,
+
+      .button.active {
+        background: transparent !important;
+        position: relative;
+      }
+
+      .button.active::after {
+        content: '';
+        position: absolute;
+        left: 25%;
+        right: 25%;
+        bottom: 2px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--primary-text-color);
+      }
+
+
+      /* Dim inactive icons so the current tab stands out */
+
+      .icon { color: var(--secondary-text-color); }
+
+      .icon.active { color: var(--primary-text-color); }
+views:
+  - title: Homelab
+    path: homelab
+    theme: glass
+    icon: mdi:server-network
+    type: sections
+    max_columns: 2
+    header:
+      layout: start
+      card:
+        type: markdown
+        text_only: true
+        content: '# Homelab'
+        card_mod:
+          style:
+            ha-markdown$: |
+              h1, p {
+                text-align: left !important;
+              }
+              h1 {
+                font-size: 2.8em !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+            .: |
+              ha-card {
+                text-align: left !important;
+                background: none;
+                border: none;
+                box-shadow: none;
+                padding-top: 12px !important;
+                padding-bottom: 24px !important;
+              }
+    footer:
+      card:
+        type: custom:navbar-card
+        template: mobile
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            content: >
+              {% set svc = [
+                ['truenas', 'binary_sensor.truenas_status'],
+                ['nextcloud', 'binary_sensor.nextcloud_status'],
+                ['vaultwarden', 'binary_sensor.vaultwarden_status'],
+                ['home-assistant', 'binary_sensor.home_assistant_status'],
+                ['adguard', 'binary_sensor.adguard_status'],
+                ['homepage', 'binary_sensor.homepage_status'],
+                ['pbs', 'binary_sensor.pbs_status'],
+                ['ntfy', 'binary_sensor.ntfy_status'],
+              ] %}
+
+              {% set ns = namespace(down=[], issues=[]) %}
+
+              {% for name, e in svc %}{% if not is_state(e, 'on') %}{% set
+              ns.down = ns.down + [name] %}{% endif %}{% endfor %}
+
+              {% if ns.down %}{% set ns.issues = ns.issues + [ns.down | join(',
+              ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] %}{%
+              endif %}
+
+              {% if states('sensor.backups_failed_count') | int(0) > 0 %}{% set
+              ns.issues = ns.issues + ['Backup check failing ·
+              [Healthchecks](https://healthchecks.io/)'] %}{% endif %}
+
+              {% for name, e in [['NAS', 'sensor.nas_pool_health'], ['Backups',
+              'sensor.backups_pool_health']] %}{% if states(e) | lower not in
+              ['online', 'healthy', 'ok'] %}{% set ns.issues = ns.issues + [name
+              ~ ' pool is ' ~ states(e)] %}{% endif %}{% endfor %}
+
+              {% set days = states('sensor.amondsen_uk_days_until_expiration') |
+              int(999) %}
+
+              {% if days < 30 %}{% set ns.issues = ns.issues + ['amondsen.uk
+              expires in ' ~ days ~ ' days'] %}{% endif %}
+
+              {% if is_state('update.nextcloud_amondsen_uk', 'on') %}{% set
+              ns.issues = ns.issues + ['Nextcloud update available'] %}{% endif
+              %}
+
+              {% if ns.issues %}
+
+              ### <ha-icon icon="mdi:alert-circle"></ha-icon> {{ ns.issues |
+              count }} {{ 'issue' if ns.issues | count == 1 else 'issues' }}
+
+              {% for i in ns.issues %}
+
+              - {{ i }}
+
+              {% endfor %}
+
+              {% else %}
+
+              ### <ha-icon icon="mdi:check-circle"></ha-icon> All systems OK
+
+              {{ svc | count }} services up · backups passing
+
+              {% endif %}
+            card_mod:
+              class: glass
+              style:
+                ha-markdown$: |
+                  h3 {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    margin: 0 0 4px 0 !important;
+                    font-size: 1.15em !important;
+                  }
+                  p, ul {
+                    margin: 0 !important;
+                    opacity: 0.7;
+                  }
+                  ha-icon[icon="mdi:check-circle"] {
+                    color: var(--success-color, #4caf50);
+                  }
+                  ha-icon[icon="mdi:alert-circle"] {
+                    color: var(--error-color);
+                  }
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Proxmox
+                  icon: phu:proxmox
+                - type: heading
+                  heading: pve1
+                  heading_style: subtitle
+                  tap_action:
+                    action: url
+                    url_path: https://192.168.0.39:8006
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.bedroom_pve1_cpu_usage
+                      name: CPU
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.bedroom_pve1_memory_usage_percentage
+                      name: RAM
+                      card_mod:
+                        class: glass
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.storage_local_lvm_storage_usage_percentage
+                      name: Disk
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.bedroom_pve1_uptime
+                      name: Uptime
+                      card_mod:
+                        class: glass
+                - type: heading
+                  heading: pve2
+                  heading_style: subtitle
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Storage
+                  icon: mdi:nas
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.nas_pool_free
+                      name: NAS Free
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.backups_pool_free
+                      name: Backups Free
+                      icon: mdi:harddisk
+                      card_mod:
+                        class: glass
+                - type: tile
+                  entity: sensor.storage_pbs_storage_usage_percentage
+                  name: PBS datastore
+                  card_mod:
+                    class: glass
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Network
+                  icon: mdi:lan
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: switch.adguard_home_protection
+                      name: AdGuard
+                      icon: phu:adguard
+                      color: green
+                      tap_action:
+                        action: toggle
+                      icon_hold_action:
+                        action: url
+                        url_path: http://192.168.0.23/
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.adguard_home_dns_queries_blocked_ratio
+                      name: Blocked
+                      card_mod:
+                        class: glass
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Open
+                  icon: mdi:open-in-new
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: binary_sensor.truenas_status
+                      name: TrueNAS
+                      icon: mdi:nas
+                      hide_state: true
+                      color: none
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.40
+                      icon_tap_action:
+                        action: url
+                        url_path: https://192.168.0.40
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: binary_sensor.pbs_status
+                      name: PBS
+                      icon: phu:proxmox
+                      hide_state: true
+                      color: none
+                      tap_action:
+                        action: url
+                        url_path: https://192.168.0.45:8007
+                      icon_tap_action:
+                        action: url
+                        url_path: https://192.168.0.45:8007
+                      card_mod:
+                        class: glass
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: binary_sensor.nextcloud_status
+                      name: Nextcloud
+                      icon: phu:nextcloud
+                      hide_state: true
+                      color: none
+                      tap_action:
+                        action: url
+                        url_path: https://nextcloud.amondsen.uk
+                      icon_tap_action:
+                        action: url
+                        url_path: https://nextcloud.amondsen.uk
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: binary_sensor.homepage_status
+                      name: Homepage
+                      icon: mdi:view-dashboard-variant
+                      hide_state: true
+                      color: none
+                      tap_action:
+                        action: url
+                        url_path: https://homepage.amondsen.uk
+                      icon_tap_action:
+                        action: url
+                        url_path: https://homepage.amondsen.uk
+                      card_mod:
+                        class: glass
+  - title: Home
+    path: home
+    theme: glass
+    icon: mdi:home
+    type: sections
+    max_columns: 2
+    header:
+      layout: start
+      card:
+        type: markdown
+        text_only: true
+        content: >
+          {% set d = now().day %}
+
+          {% set suf = 'th' if d in [11,12,13] else {1:'st',2:'nd',3:'rd'}.get(d
+          % 10, 'th') %}
+
+          {% set w = 'weather.forecast_home' %}
+
+          {% set t = state_attr(w, 'temperature') %}
+
+          {% set c = states(w) %}
+
+          {% set conds = {'clear-night': ['Clear', 'weather-night'], 'cloudy':
+          ['Cloudy', 'weather-cloudy'], 'fog': ['Fog', 'weather-fog'], 'hail':
+          ['Hail', 'weather-hail'], 'lightning': ['Lightning',
+          'weather-lightning'], 'lightning-rainy': ['Storms',
+          'weather-lightning-rainy'], 'partlycloudy': ['Partly cloudy',
+          'weather-partly-cloudy'], 'pouring': ['Pouring', 'weather-pouring'],
+          'rainy': ['Rain', 'weather-rainy'], 'snowy': ['Snow',
+          'weather-snowy'], 'snowy-rainy': ['Sleet', 'weather-snowy-rainy'],
+          'sunny': ['Sunny', 'weather-sunny'], 'windy': ['Windy',
+          'weather-windy'], 'windy-variant': ['Windy', 'weather-windy-variant'],
+          'exceptional': ['Warning', 'alert-circle-outline']} %}
+
+          {% set cond = conds.get(c, [c, 'weather-cloudy']) %}
+
+          {% set h = now().hour %}
+
+          Good {{ 'morning' if 5 <= h < 12 else 'afternoon' if 12 <= h < 17 else
+          'evening' }},
+
+
+          # Nathaniel
+
+
+          {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B')
+          }}
+
+
+          {% if t is number %}<ha-icon icon="mdi:{{ cond[1] }}"></ha-icon> {{ t
+          | round | int }}° {{ cond[0] }}{% endif %}
+        card_mod:
+          style:
+            ha-markdown$: |
+              h1, p {
+                text-align: left !important;
+              }
+              /* Greeting: a quieter line above the name */
+              p:nth-of-type(1) {
+                font-size: 1.75em !important;
+                font-weight: 500;
+                opacity: 0.65;
+                margin: 0 !important;
+              }
+              h1 {
+                font-size: 3.4em !important;
+                font-weight: 700 !important;
+                margin: 2px 0 0 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+              /* Date: small and grey under the name */
+              p:nth-of-type(2) {
+                font-size: 1.15em !important;
+                opacity: 0.55;
+                margin: 10px 0 0 0 !important;
+              }
+              /* Weather line */
+              p:nth-of-type(3) {
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 8px;
+                font-size: 1.1em !important;
+                opacity: 0.85;
+                margin: 14px 0 0 0 !important;
+              }
+              p:nth-of-type(3) ha-icon {
+                --mdc-icon-size: 26px;
+              }
+            .: |
+              ha-card {
+                text-align: left !important;
+                background: none;
+                border: none;
+                box-shadow: none;
+                padding-top: 12px !important;
+                padding-bottom: 24px !important;
+              }
+    footer:
+      card:
+        type: custom:navbar-card
+        template: mobile
+    sections:
+      - type: grid
+        cards:
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            entity: script.goodnight
+            name: Goodnight
+            icon: mdi:weather-night
+            show_state: false
+            tap_action:
+              action: perform-action
+              perform_action: script.turn_on
+              target:
+                entity_id: script.goodnight
+              confirmation:
+                text: Turn off the lights, pause music and put the PC to sleep?
+            button_action:
+              tap_action:
+                action: perform-action
+                perform_action: script.turn_on
+                target:
+                  entity_id: script.goodnight
+                confirmation:
+                  text: Turn off the lights, pause music and put the PC to sleep?
+            grid_options:
+              columns: 12
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: custom:bubble-card
+            card_type: media-player
+            entity: media_player.spotify_nathan
+            name: Spotify
+            card_layout: large
+            grid_options:
+              rows: auto
+            button_action:
+              tap_action:
+                action: url
+                url_path: https://open.spotify.com
+            styles: |
+              .bubble-media-player-container {
+                height: 110px !important;
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+              /* Square cover instead of the default small circle */
+              .bubble-icon-container,
+              .bubble-entity-picture {
+                width: 86px !important;
+                height: 86px !important;
+                min-width: 86px !important;
+                border-radius: 8px !important;
+              }
+              /* Blue pause button clashes with the monochrome look */
+              .bubble-play-pause-button {
+                background-color: rgba(255, 255, 255, 0.12) !important;
+              }
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Lights
+                  icon: mdi:lightbulb
+                - type: custom:bubble-card
+                  card_type: button
+                  button_type: slider
+                  entity: light.bedroom_light
+                  name: Bedroom Light
+                  icon: mdi:lightbulb
+                  state_content: state
+                  tap_action:
+                    action: toggle
+                  hold_action:
+                    action: more-info
+                  button_action:
+                    double_tap_action:
+                      action: more-info
+                  styles: |
+                    .bubble-button-card-container {
+                      background: rgba(255, 255, 255, 0.06) !important;
+                    }
+                - type: custom:bubble-card
+                  card_type: button
+                  button_type: slider
+                  entity: light.lamp
+                  name: Lamp
+                  icon: mdi:floor-lamp
+                  state_content: state
+                  tap_action:
+                    action: toggle
+                  hold_action:
+                    action: more-info
+                  button_action:
+                    double_tap_action:
+                      action: more-info
+                  styles: |
+                    .bubble-button-card-container {
+                      background: rgba(255, 255, 255, 0.06) !important;
+                    }
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Fan
+                  icon: mdi:fan
+                # Placeholder until the replacement fan arrives: not linked to anything
+                - type: custom:bubble-card
+                  card_type: button
+                  button_type: name
+                  name: No fan yet
+                  icon: mdi:fan-off
+                  tap_action:
+                    action: none
+                  button_action:
+                    tap_action:
+                      action: none
+                  styles: |
+                    .bubble-button-card-container {
+                      background: rgba(255, 255, 255, 0.06) !important;
+                    }
+                    .bubble-name {
+                      opacity: 0.6;
+                    }
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Windows PC
+                  icon: mdi:microsoft-windows
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: sensor.pc_status
+                      name: Status
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: sensor.windows_pc_activewindow
+                      name: Active window
+                      icon: mdi:application-outline
+                      card_mod:
+                        class: glass
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: button.windows_pc_sleep
+                      name: Sleep
+                      icon: mdi:sleep
+                      vertical: true
+                      hide_state: true
+                      tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_sleep
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: button.windows_pc_monitorsleep
+                      name: Screen Off
+                      icon: mdi:monitor-off
+                      vertical: true
+                      hide_state: true
+                      tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_monitorsleep
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: button.windows_pc_lock
+                      name: Lock
+                      icon: mdi:lock
+                      vertical: true
+                      hide_state: true
+                      tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_lock
+                      card_mod:
+                        class: glass
+                - type: horizontal-stack
+                  cards:
+                    - type: tile
+                      entity: button.windows_pc_restart
+                      name: Restart
+                      icon: mdi:restart
+                      hide_state: true
+                      tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_restart
+                        confirmation:
+                          text: Restart the PC?
+                      card_mod:
+                        class: glass
+                    - type: tile
+                      entity: button.windows_pc_shutdown
+                      name: Shutdown
+                      icon: mdi:power
+                      hide_state: true
+                      tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_shutdown
+                        confirmation:
+                          text: Shut down the PC?
+                      card_mod:
+                        class: glass
+          - type: custom:mod-card
+            card:
+              type: vertical-stack
+              cards:
+                - type: custom:bubble-card
+                  card_type: separator
+                  name: Up next
+                  icon: mdi:calendar-clock
+                  sub_button:
+                    - icon: mdi:calendar-plus
+                      show_background: true
+                      tap_action:
+                        action: navigate
+                        navigation_path: '#add-event'
+                - type: custom:calendar-card-pro
+                  entities:
+                    - entity: calendar.55namoamondsen_gmail_com
+                      accent_color: home-assistant
+                    - entity: calendar.my_timetable
+                      show_location: false
+                      accent_color: '#193157'
+                    - entity: calendar.work
+                      show_location: false
+                      accent_color: '#E4D80C'
+                  days_to_show: 2
+                  background_color: rgba(255, 255, 255, 0.04)
+                  time_24h: true
+                  day_font_size: 28px
+                  weekday_font_size: 15px
+                  month_font_size: 13px
+                  event_font_size: 15px
+                  time_font_size: 13px
+                  tap_action:
+                    action: url
+                    url_path: https://calendar.google.com
+                  card_mod:
+                    style: |
+                      ha-card {
+                        backdrop-filter: blur(12px);
+                        border: 1px solid var(--divider-color);
+                        border-radius: 12px;
+                        box-shadow: none;
+                      }
+          # Add event pop-up; opened by the + on Up next and the Add event button on Planner
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#add-event'
+                name: Add event
+                icon: mdi:calendar-plus
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+                open_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_prepare
+              - type: entities
+                card_mod:
+                  class: glass
+                entities:
+                  - entity: input_text.event_title
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_text.event_description
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_text.event_location
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_datetime.event_start
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge,
+                          .info {
+                            display: none;
+                          }
+                          /* HA right-aligns date + time; spread them edge to edge instead */
+                          ::slotted(div.both) {
+                            justify-content: space-between !important;
+                          }
+                  - entity: input_select.event_duration
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                  - entity: input_select.event_calendar
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+              - type: custom:bubble-card
+                card_type: button
+                button_type: name
+                name: Add to calendar
+                icon: mdi:calendar-check
+                tap_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_add
+                button_action:
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.calendar_form_add
+                styles: |
+                  .bubble-button-card-container {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    backdrop-filter: blur(12px);
+                    border: 1px solid var(--divider-color);
+                    border-radius: 12px !important;
+                  }
+  - title: Planner
+    path: planner
+    theme: glass
+    icon: mdi:notebook
+    type: sections
+    max_columns: 2
+    header:
+      layout: start
+      card:
+        type: markdown
+        text_only: true
+        content: '# Planner'
+        card_mod:
+          style:
+            ha-markdown$: |
+              h1, p {
+                text-align: left !important;
+              }
+              h1 {
+                font-size: 2.8em !important;
+                font-weight: 700 !important;
+                margin: 0 !important;
+                line-height: 1 !important;
+                letter-spacing: -0.02em;
+              }
+            .: |
+              ha-card {
+                text-align: left !important;
+                background: none;
+                border: none;
+                box-shadow: none;
+                padding-top: 12px !important;
+                padding-bottom: 24px !important;
+              }
+    footer:
+      card:
+        type: custom:navbar-card
+        template: mobile
+    sections:
+      - type: grid
+        cards:
+          - type: custom:bubble-card
+            card_type: button
+            button_type: state
+            entity: todo.todo_long
+            name: To Do
+            icon: mdi:calendar-check
+            show_state: true
+            tap_action:
+              action: navigate
+              navigation_path: '#todo'
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#todo'
+            grid_options:
+              columns: 6
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: state
+            entity: todo.uni_work
+            name: Uni Work
+            icon: mdi:school
+            show_state: true
+            tap_action:
+              action: navigate
+              navigation_path: '#uni'
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#uni'
+            grid_options:
+              columns: 6
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: state
+            entity: todo.shopping_list
+            name: Shopping
+            icon: mdi:cart
+            show_state: true
+            tap_action:
+              action: navigate
+              navigation_path: '#shopping'
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#shopping'
+            grid_options:
+              columns: 6
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: state
+            entity: todo.notepad
+            name: Notepad
+            icon: mdi:note-text
+            show_state: true
+            tap_action:
+              action: navigate
+              navigation_path: '#notepad'
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#notepad'
+            grid_options:
+              columns: 6
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Add event
+            icon: mdi:calendar-plus
+            tap_action:
+              action: navigate
+              navigation_path: '#add-event'
+            button_action:
+              tap_action:
+                action: navigate
+                navigation_path: '#add-event'
+            grid_options:
+              columns: 12
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+          - type: grid
+            square: false
+            columns: 1
+            cards:
+              - type: custom:bubble-card
+                card_type: separator
+                name: This Week
+                icon: mdi:calendar
+              - type: custom:calendar-card-pro
+                entities:
+                  - entity: calendar.my_timetable
+                    show_location: true
+                    accent_color: '#193157'
+                  - entity: calendar.55namoamondsen_gmail_com
+                    accent_color: home-assistant
+                  - entity: calendar.work
+                    show_location: false
+                    accent_color: '#E4D80C'
+                days_to_show: 7
+                background_color: rgba(255, 255, 255, 0.04)
+                time_24h: true
+                tap_action:
+                  action: url
+                  url_path: https://calendar.google.com
+                card_mod:
+                  style: |
+                    ha-card {
+                      backdrop-filter: blur(12px);
+                      border: 1px solid var(--divider-color);
+                      border-radius: 12px;
+                      box-shadow: none;
+                    }
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#todo'
+                name: To Do
+                icon: mdi:calendar-check
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+              - type: todo-list
+                entity: todo.todo_long
+                display_order: none
+                card_mod:
+                  class: glass
+                  style:
+                    .: |
+                      ha-card {
+                        padding: 0 0 12px 0 !important;
+                      }
+                      ha-input {
+                        width: 100%;
+                        margin: 0 !important;
+                      }
+                      .empty {
+                        display: none !important;
+                      }
+                    ha-input$: |
+                      wa-input {
+                        --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                      }
+                      wa-input::part(base) {
+                        background: rgba(255, 255, 255, 0.04) !important;
+                        border-radius: 10px 10px 0 0;
+                      }
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#uni'
+                name: Uni Work
+                icon: mdi:school
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+              - type: todo-list
+                entity: todo.uni_work
+                display_order: none
+                card_mod:
+                  class: glass
+                  style:
+                    .: |
+                      ha-card {
+                        padding: 0 0 12px 0 !important;
+                      }
+                      ha-input {
+                        width: 100%;
+                        margin: 0 !important;
+                      }
+                      .empty {
+                        display: none !important;
+                      }
+                    ha-input$: |
+                      wa-input {
+                        --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                      }
+                      wa-input::part(base) {
+                        background: rgba(255, 255, 255, 0.04) !important;
+                        border-radius: 10px 10px 0 0;
+                      }
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#shopping'
+                name: Shopping
+                icon: mdi:cart
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+              - type: todo-list
+                entity: todo.shopping_list
+                display_order: none
+                card_mod:
+                  class: glass
+                  style:
+                    .: |
+                      ha-card {
+                        padding: 0 0 12px 0 !important;
+                      }
+                      ha-input {
+                        width: 100%;
+                        margin: 0 !important;
+                      }
+                      .empty {
+                        display: none !important;
+                      }
+                    ha-input$: |
+                      wa-input {
+                        --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                      }
+                      wa-input::part(base) {
+                        background: rgba(255, 255, 255, 0.04) !important;
+                        border-radius: 10px 10px 0 0;
+                      }
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#notepad'
+                name: Notepad
+                icon: mdi:note-text
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+              - type: todo-list
+                entity: todo.notepad
+                display_order: none
+                card_mod:
+                  class: glass
+                  style:
+                    ha-check-list-item$: |
+                      ha-checkbox {
+                        display: none !important;
+                      }
+                    .: |
+                      ha-card {
+                        padding: 0 0 12px 0 !important;
+                      }
+                      .header {
+                        display: none !important;
+                      }
+                      .empty {
+                        display: none !important;
+                      }
+                    ha-input$: |
+                      wa-input {
+                        --wa-form-control-background-color: rgba(255, 255, 255, 0.04);
+                      }
+                      wa-input::part(base) {
+                        background: rgba(255, 255, 255, 0.04) !important;
+                        border-radius: 10px 10px 0 0;
+                      }
+          # Add event pop-up; opened by the + on Up next and the Add event button on Planner
+          - type: vertical-stack
+            cards:
+              - type: custom:bubble-card
+                card_type: pop-up
+                hash: '#add-event'
+                name: Add event
+                icon: mdi:calendar-plus
+                bg_color: '#141414'
+                bg_opacity: '75'
+                bg_blur: '16'
+                open_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_prepare
+              - type: entities
+                card_mod:
+                  class: glass
+                entities:
+                  - entity: input_text.event_title
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_text.event_description
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_text.event_location
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                        # Hide HA's grey "(empty value)" placeholder
+                        ha-input $: |
+                          wa-input::part(input)::placeholder {
+                            color: transparent !important;
+                          }
+                  - entity: input_datetime.event_start
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge,
+                          .info {
+                            display: none;
+                          }
+                          /* HA right-aligns date + time; spread them edge to edge instead */
+                          ::slotted(div.both) {
+                            justify-content: space-between !important;
+                          }
+                  - entity: input_select.event_duration
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+                  - entity: input_select.event_calendar
+                    card_mod:
+                      style:
+                        hui-generic-entity-row $: |
+                          state-badge {
+                            display: none;
+                          }
+              - type: custom:bubble-card
+                card_type: button
+                button_type: name
+                name: Add to calendar
+                icon: mdi:calendar-check
+                tap_action:
+                  action: perform-action
+                  perform_action: script.calendar_form_add
+                button_action:
+                  tap_action:
+                    action: perform-action
+                    perform_action: script.calendar_form_add
+                styles: |
+                  .bubble-button-card-container {
+                    background: rgba(255, 255, 255, 0.04) !important;
+                    backdrop-filter: blur(12px);
+                    border: 1px solid var(--divider-color);
+                    border-radius: 12px !important;
+                  }
+background:
+  opacity: 50
+  alignment: center
+  size: cover
+  repeat: repeat
+  attachment: fixed
+  image:
+    media_content_id: media-source://image_upload/add8288d7aa6ae24a59b761f623995d8
+    media_content_type: image/jpeg
+    metadata:
+      title: leaves-hires.jpg
+      thumbnail: /api/image/serve/add8288d7aa6ae24a59b761f623995d8/256x256
+      media_class: image
+      navigateIds:
+        - {}
+        - media_content_type: app
+          media_content_id: media-source://image_upload

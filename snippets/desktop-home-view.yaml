@@ -1,0 +1,455 @@
+title: Home
+path: home
+theme: glass
+icon: mdi:home
+type: sections
+max_columns: 4
+header:
+  card:
+    type: markdown
+    text_only: true
+    content: >-
+      {% set d = now().day %}
+
+      {% set suf = 'th' if d in [11,12,13] else {1:'st',2:'nd',3:'rd'}.get(d
+      % 10, 'th') %}
+
+      # {{ now().strftime('%H:%M') }}
+
+      {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B
+      %Y') }}
+    card_mod:
+      style:
+        ha-markdown$: |
+          h1 {
+            font-size: 6.5em !important;
+            font-weight: 700 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            letter-spacing: -0.02em;
+          }
+          p {
+            font-size: 1.4em !important;
+            opacity: 0.6;
+            margin: 10px 0 0 0 !important;
+          }
+        .: |
+          ha-card {
+            text-align: center;
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding-top: 80px !important;
+            padding-bottom: 60px !important;
+          }
+footer:
+  card:
+    type: custom:navbar-card
+    template: default
+sections:
+  - type: grid
+    cards:
+      - type: weather-forecast
+        entity: weather.forecast_home
+        name: Newcastle
+        show_current: true
+        show_forecast: false
+        forecast_type: hourly
+        grid_options:
+          rows: auto
+        card_mod:
+          class: glass
+          style: |
+            ha-card {
+              height: 84px !important;
+              min-height: 0 !important;
+              padding: 12px !important;
+            }
+      - type: custom:mod-card
+        card_mod:
+          style: |
+            ha-card {
+              background: rgba(255, 255, 255, 0.04);
+              backdrop-filter: blur(12px);
+              border: 1px solid var(--divider-color);
+              border-radius: 12px;
+              box-shadow: none;
+              padding: 8px 4px 4px;
+            }
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:bubble-card
+              card_type: separator
+              name: Events
+              icon: mdi:calendar-star
+              sub_button:
+                - icon: mdi:calendar-plus
+                  show_background: true
+                  tap_action:
+                    action: navigate
+                    navigation_path: '#add-event'
+            - type: custom:calendar-card-pro
+              entities:
+                - entity: calendar.55namoamondsen_gmail_com
+                  accent_color: home-assistant
+                  label: home-assistant
+                - entity: calendar.my_timetable
+                  show_location: false
+                  accent_color: '#193157'
+                  label: home-assistant
+              background_color: transparent
+              max_height: 300px
+              time_24h: true
+              day_font_size: 28px
+              weekday_font_size: 15px
+              month_font_size: 13px
+              event_font_size: 15px
+              time_font_size: 13px
+              tap_action:
+                action: url
+                url_path: https://calendar.google.com
+              card_mod:
+                style: |
+                  ha-card {
+                    border: none;
+                    box-shadow: none;
+                    backdrop-filter: none;
+                  }
+      - type: custom:mod-card
+        card_mod:
+          style: |
+            ha-card {
+              background: rgba(255, 255, 255, 0.04);
+              backdrop-filter: blur(12px);
+              border: 1px solid var(--divider-color);
+              border-radius: 12px;
+              box-shadow: none;
+              padding: 8px 4px 4px;
+            }
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:bubble-card
+              card_type: separator
+              name: Shifts
+              icon: phu:mcdonalds
+            - type: custom:calendar-card-pro
+              entities:
+                - entity: calendar.work
+                  show_location: false
+                  accent_color: '#E4D80C'
+              days_to_show: 30
+              background_color: transparent
+              compact_events_to_show: 3
+              time_24h: true
+              day_font_size: 28px
+              weekday_font_size: 15px
+              month_font_size: 13px
+              event_font_size: 15px
+              time_font_size: 13px
+              tap_action:
+                action: url
+                url_path: https://calendar.google.com
+              card_mod:
+                style: |
+                  ha-card {
+                    border: none;
+                    box-shadow: none;
+                    backdrop-filter: none;
+                  }
+      # Add event pop-up; opened by the + on the Events title
+      - type: vertical-stack
+        cards:
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#add-event'
+            name: Add event
+            icon: mdi:calendar-plus
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
+            open_action:
+              action: perform-action
+              perform_action: script.calendar_form_prepare
+          - type: entities
+            card_mod:
+              class: glass
+            entities:
+              - entity: input_text.event_title
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+                    # Hide HA's grey "(empty value)" placeholder
+                    ha-input $: |
+                      wa-input::part(input)::placeholder {
+                        color: transparent !important;
+                      }
+              - entity: input_text.event_description
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+                    # Hide HA's grey "(empty value)" placeholder
+                    ha-input $: |
+                      wa-input::part(input)::placeholder {
+                        color: transparent !important;
+                      }
+              - entity: input_text.event_location
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+                    # Hide HA's grey "(empty value)" placeholder
+                    ha-input $: |
+                      wa-input::part(input)::placeholder {
+                        color: transparent !important;
+                      }
+              - entity: input_datetime.event_start
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge,
+                      .info {
+                        display: none;
+                      }
+                      /* HA right-aligns date + time; spread them edge to edge instead */
+                      ::slotted(div.both) {
+                        justify-content: space-between !important;
+                      }
+              - entity: input_select.event_duration
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+              - entity: input_select.event_calendar
+                card_mod:
+                  style:
+                    hui-generic-entity-row $: |
+                      state-badge {
+                        display: none;
+                      }
+          - type: custom:bubble-card
+            card_type: button
+            button_type: name
+            name: Add to calendar
+            icon: mdi:calendar-check
+            tap_action:
+              action: perform-action
+              perform_action: script.calendar_form_add
+            button_action:
+              tap_action:
+                action: perform-action
+                perform_action: script.calendar_form_add
+            styles: |
+              .bubble-button-card-container {
+                background: rgba(255, 255, 255, 0.04) !important;
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--divider-color);
+                border-radius: 12px !important;
+              }
+  - type: grid
+    cards:
+      - type: custom:bubble-card
+        card_type: media-player
+        entity: media_player.spotify_nathan
+        name: Spotify
+        card_layout: large
+        grid_options:
+          rows: auto
+        button_action:
+          tap_action:
+            action: url
+            url_path: https://open.spotify.com
+        styles: |
+          .bubble-media-player-container {
+            height: 110px !important;
+            background: rgba(255, 255, 255, 0.04) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--divider-color);
+            border-radius: 12px !important;
+          }
+          /* Square cover instead of the default small circle */
+          .bubble-icon-container,
+          .bubble-entity-picture {
+            width: 86px !important;
+            height: 86px !important;
+            min-width: 86px !important;
+            border-radius: 8px !important;
+          }
+          /* Blue pause button clashes with the monochrome look */
+          .bubble-play-pause-button {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+          }
+      - type: custom:mod-card
+        card_mod:
+          style: |
+            ha-card {
+              background: rgba(255, 255, 255, 0.04);
+              backdrop-filter: blur(12px);
+              border: 1px solid var(--divider-color);
+              border-radius: 12px;
+              box-shadow: none;
+              padding: 8px 12px 12px;
+            }
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:bubble-card
+              card_type: separator
+              name: Devices
+              icon: mdi:devices
+            - type: heading
+              heading: S25 Ultra
+              heading_style: subtitle
+              icon: mdi:cellphone
+            - type: horizontal-stack
+              cards:
+                - type: tile
+                  entity: sensor.s25_ultra_battery_level
+                  name: Battery
+                  card_mod:
+                    class: glass
+                - type: tile
+                  entity: sensor.s25_ultra_wi_fi_connection
+                  name: WiFi
+                  icon: mdi:wifi
+                  card_mod:
+                    class: glass
+            - type: horizontal-stack
+              cards:
+                - type: tile
+                  entity: sensor.phone_next_alarm
+                  name: Next alarm
+                  icon: mdi:alarm
+                  card_mod:
+                    class: glass
+                - type: tile
+                  entity: sensor.s25_ultra_daily_steps
+                  name: Steps
+                  icon: mdi:walk
+                  card_mod:
+                    class: glass
+            - type: heading
+              heading: Windows PC
+              heading_style: subtitle
+              icon: mdi:microsoft-windows
+            - type: horizontal-stack
+              cards:
+                - type: tile
+                  entity: sensor.pc_status
+                  name: Status
+                  tap_action:
+                    action: perform-action
+                    perform_action: button.press
+                    target:
+                      entity_id: button.windows_pc_sleep
+                    confirmation:
+                      text: Put the PC to sleep?
+                  card_mod:
+                    class: glass
+                - type: tile
+                  entity: sensor.windows_pc_activewindow
+                  name: Active window
+                  icon: mdi:application-outline
+                  card_mod:
+                    class: glass
+      - type: custom:mod-card
+        card_mod:
+          style: |
+            ha-card {
+              background: rgba(255, 255, 255, 0.04);
+              backdrop-filter: blur(12px);
+              border: 1px solid var(--divider-color);
+              border-radius: 12px;
+              box-shadow: none;
+              padding: 12px;
+            }
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:bubble-card
+              card_type: separator
+              name: Lights
+              icon: mdi:lightbulb
+            - type: custom:bubble-card
+              card_type: button
+              button_type: slider
+              entity: light.bedroom_light
+              name: Bedroom Light
+              icon: mdi:lightbulb
+              state_content: state
+              tap_action:
+                action: toggle
+              hold_action:
+                action: more-info
+              button_action:
+                double_tap_action:
+                  action: more-info
+              styles: |
+                .bubble-button-card-container {
+                  background: rgba(255, 255, 255, 0.06) !important;
+                }
+            - type: custom:bubble-card
+              card_type: button
+              button_type: slider
+              entity: light.lamp
+              name: Lamp
+              icon: mdi:floor-lamp
+              state_content: state
+              tap_action:
+                action: toggle
+              hold_action:
+                action: more-info
+              button_action:
+                double_tap_action:
+                  action: more-info
+              styles: |
+                .bubble-button-card-container {
+                  background: rgba(255, 255, 255, 0.06) !important;
+                }
+      - type: custom:mod-card
+        card_mod:
+          style: |
+            ha-card {
+              background: rgba(255, 255, 255, 0.04);
+              backdrop-filter: blur(12px);
+              border: 1px solid var(--divider-color);
+              border-radius: 12px;
+              box-shadow: none;
+              padding: 12px;
+            }
+        card:
+          type: vertical-stack
+          cards:
+            - type: custom:bubble-card
+              card_type: separator
+              name: Fan
+              icon: mdi:fan
+            # Placeholder until the replacement fan arrives: not linked to anything
+            - type: custom:bubble-card
+              card_type: button
+              button_type: name
+              name: No fan yet
+              icon: mdi:fan-off
+              tap_action:
+                action: none
+              button_action:
+                tap_action:
+                  action: none
+              styles: |
+                .bubble-button-card-container {
+                  background: rgba(255, 255, 255, 0.06) !important;
+                }
+                .bubble-name {
+                  opacity: 0.6;
+                }

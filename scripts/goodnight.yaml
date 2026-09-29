@@ -1,0 +1,29 @@
+# Used by the Goodnight button on the phone dashboard (mobile.yaml).
+# Paste this whole file into Settings > Automations & scenes > Scripts >
+# Create script > ⋮ > Edit in YAML, and save it with the entity ID script.goodnight.
+alias: Goodnight
+icon: mdi:weather-night
+mode: single
+sequence:
+  - action: light.turn_off
+    target:
+      entity_id:
+        - light.bedroom_light
+        - light.lamp
+  - if:
+      - condition: state
+        entity_id: media_player.spotify_nathan
+        state: playing
+    then:
+      - action: media_player.media_pause
+        target:
+          entity_id: media_player.spotify_nathan
+  # The PC may already be off, in which case the button is unavailable; carry on regardless
+  - action: button.press
+    continue_on_error: true
+    target:
+      entity_id: button.windows_pc_sleep
+  # Add the fan here once it's set up, e.g.
+  # - action: fan.turn_off
+  #   target:
+  #     entity_id: fan.bedroom_fan
