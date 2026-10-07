@@ -161,7 +161,7 @@ views:
                   heading_style: subtitle
                   tap_action:
                     action: url
-                    url_path: https://192.168.0.39:8006
+                    url_path: https://10.10.0.39:8006
                 - type: horizontal-stack
                   cards:
                     - type: tile
@@ -254,7 +254,7 @@ views:
                         action: toggle
                       icon_hold_action:
                         action: url
-                        url_path: http://192.168.0.23/
+                        url_path: http://10.10.0.23/
                       card_mod:
                         class: glass
                     - type: tile
@@ -300,7 +300,7 @@ views:
                     - icon: mdi:open-in-new
                       tap_action:
                         action: url
-                        url_path: https://192.168.0.40
+                        url_path: https://10.10.0.40
                 - type: horizontal-stack
                   cards:
                     - type: tile
@@ -777,7 +777,7 @@ views:
                   icon: phu:proxmox
                   tap_action:
                     action: url
-                    url_path: https://192.168.0.45:8007
+                    url_path: https://10.10.0.45:8007
                 - type: tile
                   entity: sensor.storage_pbs_storage_usage_percentage
                   name: PBS datastore
