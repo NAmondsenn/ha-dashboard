@@ -114,7 +114,7 @@ views:
   - title: Homelab
     path: homelab
     theme: glass
-    icon: mdi:server-network
+    icon: mdi:server
     type: sections
     max_columns: 4
     footer:
@@ -123,277 +123,577 @@ views:
         template: default
     sections:
       - type: grid
+        column_span: 4
         cards:
-          - type: markdown
-            text_only: true
-            content: '# Homelab'
+          - type: horizontal-stack
             grid_options:
-              rows: 3.5
-              columns: 12
+              columns: full
+            cards:
+              - type: markdown
+                text_only: true
+                content: '# Homelab'
+                card_mod:
+                  style:
+                    ha-markdown$: |
+                      h1 {
+                        font-size: 5em !important;
+                        font-weight: 700 !important;
+                        margin: 0 !important;
+                        line-height: 1 !important;
+                        letter-spacing: -0.02em;
+                      }
+                    .: >
+                      /* Top-aligned and the same size as the clock, so title and
+                      time share one top edge */
+
+                      ha-card {
+                        text-align: left;
+                        background: none;
+                        border: none;
+                        box-shadow: none;
+                        padding: 20px 0;
+                        height: 100%;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start;
+                      }
+              - type: markdown
+                text_only: true
+                content: >-
+                  {% set d = now().day %}
+
+                  {% set suf = 'th' if d in [11,12,13] else
+                  {1:'st',2:'nd',3:'rd'}.get(d % 10, 'th') %}
+
+                  # {{ now().strftime('%H:%M') }}
+
+                  {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B
+                  %Y') }}
+                card_mod:
+                  style:
+                    ha-markdown$: |
+                      h1 {
+                        font-size: 5em !important;
+                        font-weight: 700 !important;
+                        margin: 0 !important;
+                        line-height: 1 !important;
+                        letter-spacing: -0.02em;
+                      }
+                      p {
+                        font-size: 1.25em !important;
+                        opacity: 0.6;
+                        margin: 10px 0 0 0 !important;
+                      }
+                    .: |
+                      ha-card {
+                        text-align: right;
+                        background: none;
+                        border: none;
+                        box-shadow: none;
+                        padding: 20px 0;
+                        height: 100%;
+                        box-sizing: border-box;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: flex-start;
+                      }
+          - type: markdown
+            show_empty: false
+            grid_options:
+              columns: full
+            content: >-
+              {#- Renders nothing while all is well, so show_empty: false hides the
+              card. Keep in step with the navbar badge. -#}
+
+              {%- set ns = namespace(issues=[]) -%}
+
+              {%- for s in ['truenas', 'nextcloud', 'vaultwarden', 'home_assistant',
+              'adguard', 'homepage', 'pbs', 'ntfy', 'jellyfin', 'immich',
+              'jellyfin_stack'] -%}
+                {%- if is_state('binary_sensor.' ~ s ~ '_status', 'off') -%}
+                  {%- set ns.issues = ns.issues + [s | replace('_', '-') ~ ' down'] -%}
+                {%- endif -%}
+              {%- endfor -%}
+
+              {%- for e, label in [('sensor.nas_pool_health', 'nas pool'),
+              ('sensor.backups_pool_health', 'backups pool'),
+              ('sensor.media_disk_health', 'media disk')] -%}
+                {%- if states(e) != 'ONLINE' -%}
+                  {%- set ns.issues = ns.issues + [label ~ ' ' ~ states(e) | lower] -%}
+                {%- endif -%}
+              {%- endfor -%}
+
+              {%- set failed = states('sensor.backups_failed_count') | int(0) -%}
+
+              {%- if failed > 0 -%}
+                {%- set ns.issues = ns.issues + [failed ~ ' backup check' ~ ('s' if failed > 1 else '') ~ ' failing'] -%}
+              {%- endif -%}
+
+              {%- set days = states('sensor.amondsen_uk_days_until_expiration') |
+              int(999) -%}
+
+              {%- if days < 30 -%}
+                {%- set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] -%}
+              {%- endif -%}
+
+              {%- set lvm =
+              states('sensor.storage_local_lvm_storage_usage_percentage_2') |
+              float(0) -%}
+
+              {%- if lvm > 85 -%}
+                {%- set ns.issues = ns.issues + ['pve2 local-lvm at ' ~ lvm | round(0) | int ~ '%'] -%}
+              {%- endif -%}
+
+              {%- set free = states('sensor.storage_library_available_storage') |
+              float(999) -%}
+
+              {%- if free < 50 -%}
+                {%- set ns.issues = ns.issues + ['media disk down to ' ~ free | round(0) | int ~ ' GiB free'] -%}
+              {%- endif -%}
+
+              {%- if ns.issues | count > 0 -%}
+
+              <ha-icon icon="mdi:alert-circle-outline"></ha-icon> **Needs
+              attention:** {{ ns.issues | join(', ') }}
+
+              {%- endif -%}
             card_mod:
+              class: glass
               style:
-                ha-markdown$: |
-                  h1 {
-                    font-size: 4em !important;
-                    font-weight: 700 !important;
+                ha-markdown$: >
+                  /* Flex row so the icon centres on the text instead of sitting on
+                  its baseline */
+
+                  p {
                     margin: 0 !important;
-                    line-height: 1 !important;
-                    letter-spacing: -0.02em;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
                   }
-                .: |
+
+                  ha-icon {
+                    --mdc-icon-size: 18px;
+                    display: flex;
+                  }
+                .: >
+                  /* Same glass as everything else, with the error colour as the
+                  only accent */
+
                   ha-card {
-                    text-align: left;
-                    background: none;
-                    border: none;
-                    box-shadow: none;
-                    padding-top: 70px;
+                    border-color: var(--error-color) !important;
+                    color: var(--error-color);
                   }
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Proxmox
-                  icon: phu:proxmox
-                - type: heading
-                  heading: pve1
-                  heading_style: subtitle
-                  tap_action:
-                    action: url
-                    url_path: https://pve1.home.amondsen.uk
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.bedroom_pve1_cpu_usage
-                      name: CPU
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.bedroom_pve1_memory_usage_percentage
-                      name: RAM
-                      card_mod:
-                        class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.bedroom_pve1_uptime
-                      name: Uptime
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.storage_local_lvm_storage_usage_percentage
-                      name: local-lvm
-                      card_mod:
-                        class: glass
-                - type: entities
-                  state_color: false
-                  card_mod:
-                    class: glass
-                  entities:
-                    - entity: binary_sensor.truenas_status
-                      name: truenas
-                      icon: mdi:nas
-                    - entity: binary_sensor.nextcloud_status
-                      name: nextcloud
-                      icon: phu:nextcloud
-                    - entity: binary_sensor.vaultwarden_status
-                      name: vaultwarden
-                      icon: phu:bitwarden
-                    - entity: binary_sensor.home_assistant_status
-                      name: home-assistant
-                      icon: mdi:home-assistant
-                    - entity: binary_sensor.adguard_status
-                      name: adguard
-                      icon: phu:adguard
-                    - entity: binary_sensor.homepage_status
-                      name: homepage
-                      icon: mdi:view-dashboard-variant
-                    - entity: binary_sensor.pbs_status
-                      name: pbs
-                      icon: phu:proxmox
-                    - entity: binary_sensor.ntfy_status
-                      name: ntfy
-                      icon: mdi:bell-ring
-                - type: heading
-                  heading: pve2
-                  heading_style: subtitle
       - type: grid
         cards:
-          - type: markdown
-            content: '&nbsp;'
-            grid_options:
-              columns: 12
-              rows: 3.5
+          - type: custom:bubble-card
+            card_type: separator
+            name: Proxmox
+            icon: phu:proxmox
+          - type: heading
+            heading: pve1
+            heading_style: subtitle
+            icon: mdi:server
+            tap_action:
+              action: url
+              url_path: https://pve1.home.amondsen.uk
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.bedroom_pve1_cpu_usage
+                name: CPU
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.bedroom_pve1_memory_usage_percentage
+                name: RAM
+                card_mod:
+                  class: glass
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.bedroom_pve1_uptime
+                name: Uptime
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.storage_local_lvm_storage_usage_percentage
+                name: local-lvm
+                card_mod:
+                  class: glass
+          - type: entities
+            state_color: false
             card_mod:
-              style: |
-                ha-card {
-                  background: none;
-                  border: none;
-                  box-shadow: none;
-                  backdrop-filter: none;
-                }
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Network
-                  icon: mdi:lan
-                - type: heading
-                  heading_style: subtitle
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: switch.adguard_home_protection
-                      name: AdGuard
-                      icon: phu:adguard
-                      color: green
-                      tap_action:
-                        action: toggle
-                      icon_hold_action:
-                        action: url
-                        url_path: https://adguard.home.amondsen.uk/
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.adguard_home_dns_queries_blocked_ratio
-                      name: Blocked
-                      card_mod:
-                        class: glass
-                - type: tile
-                  entity: sensor.adguard_home_dns_queries
-                  name: Queries
-                  card_mod:
-                    class: glass
-                - type: heading
-                  heading: Speedtest
-                  heading_style: subtitle
-                  icon: mdi:speedometer
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.speedtest_download
-                      name: Download
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.speedtest_upload
-                      name: Upload
-                      card_mod:
-                        class: glass
-                - type: tile
-                  entity: sensor.speedtest_ping
-                  name: Ping
-                  card_mod:
-                    class: glass
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: TrueNAS
-                  icon: mdi:nas
-                  sub_button:
-                    - icon: mdi:open-in-new
-                      tap_action:
-                        action: url
-                        url_path: https://truenas.home.amondsen.uk
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.nas_pool_used
-                      name: Nas Used Space
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.nas_pool_free
-                      name: Nas Free Space
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.backups_pool_used
-                      name: Backups Used Space
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.backups_pool_free
-                      name: Backups Free Space
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.nas_pool_health
-                      name: Nas Health
-                      icon: mdi:heart-pulse
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.backups_pool_health
-                      name: Backups Health
-                      icon: mdi:heart-pulse
-                      card_mod:
-                        class: glass
+              class: glass
+            entities:
+              - entity: binary_sensor.truenas_status
+                name: truenas
+                icon: mdi:nas
+                tap_action:
+                  action: url
+                  url_path: https://truenas.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.nextcloud_status
+                name: nextcloud
+                icon: phu:nextcloud
+                tap_action:
+                  action: url
+                  url_path: https://nextcloud.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.vaultwarden_status
+                name: vaultwarden
+                icon: phu:bitwarden
+                tap_action:
+                  action: url
+                  url_path: https://vaultwarden.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.home_assistant_status
+                name: home-assistant
+                icon: mdi:home-assistant
+              - entity: binary_sensor.adguard_status
+                name: adguard
+                icon: phu:adguard
+                tap_action:
+                  action: url
+                  url_path: https://adguard.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.homepage_status
+                name: homepage
+                icon: mdi:view-dashboard-variant
+                tap_action:
+                  action: url
+                  url_path: https://homepage.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.pbs_status
+                name: pbs
+                icon: phu:proxmox
+                tap_action:
+                  action: url
+                  url_path: https://pbs.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.ntfy_status
+                name: ntfy
+                icon: mdi:bell-ring
+                tap_action:
+                  action: url
+                  url_path: https://ntfy.amondsen.uk
+                hold_action:
+                  action: more-info
+          - type: heading
+            heading: pve2
+            heading_style: subtitle
+            icon: mdi:server
+            tap_action:
+              action: url
+              url_path: https://pve2.home.amondsen.uk
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.pve2_cpu_usage
+                name: CPU
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.pve2_memory_usage_percentage
+                name: RAM
+                card_mod:
+                  class: glass
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.pve2_uptime
+                name: Uptime
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.storage_local_lvm_storage_usage_percentage_2
+                name: local-lvm
+                card_mod:
+                  class: glass
+          - type: entities
+            state_color: false
+            card_mod:
+              class: glass
+            entities:
+              - entity: binary_sensor.jellyfin_status
+                name: jellyfin
+                icon: phu:jellyfin
+                tap_action:
+                  action: url
+                  url_path: https://jellyfin.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.immich_status
+                name: immich
+                icon: phu:immich
+                tap_action:
+                  action: url
+                  url_path: https://immich.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.jellyfin_stack_status
+                name: jellyfin-stack
+                icon: mdi:docker
+                tap_action:
+                  action: url
+                  url_path: https://seerr.home.amondsen.uk
+                hold_action:
+                  action: more-info
       - type: grid
         cards:
-          - type: markdown
-            content: '&nbsp;'
+          - type: custom:bubble-card
+            card_type: separator
+            name: Network
+            icon: mdi:lan
+          - type: heading
+            heading: AdGuard
+            heading_style: subtitle
+            icon: phu:adguard
+            tap_action:
+              action: url
+              url_path: https://adguard.home.amondsen.uk/
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: switch.adguard_home_protection
+                name: Protection
+                icon: phu:adguard
+                color: green
+                tap_action:
+                  action: toggle
+                  confirmation:
+                    text: Toggle AdGuard protection for the whole network?
+                icon_tap_action:
+                  action: toggle
+                  confirmation:
+                    text: Toggle AdGuard protection for the whole network?
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.adguard_home_dns_queries_blocked_ratio
+                name: Blocked
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.adguard_home_dns_queries
+                name: Queries
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: Speedtest
+            heading_style: subtitle
+            icon: mdi:speedometer
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.speedtest_download
+                name: Download
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.speedtest_upload
+                name: Upload
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.speedtest_ping
+                name: Ping
+                card_mod:
+                  class: glass
+          - type: custom:bubble-card
+            card_type: separator
+            name: TrueNAS
+            icon: mdi:nas
+            sub_button:
+              - icon: mdi:open-in-new
+                tap_action:
+                  action: url
+                  url_path: https://truenas.home.amondsen.uk
+          - type: heading
+            heading: nas
+            heading_style: subtitle
+            icon: mdi:database
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.nas_pool_used
+                name: Used
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.nas_pool_free
+                name: Free
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.nas_pool_health
+                name: Health
+                icon: mdi:heart-pulse
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: backups
+            heading_style: subtitle
+            icon: mdi:database
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.backups_pool_used
+                name: Used
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.backups_pool_free
+                name: Free
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.backups_pool_health
+                name: Health
+                icon: mdi:heart-pulse
+                card_mod:
+                  class: glass
+          - type: custom:bubble-card
+            card_type: separator
+            name: Media
+            icon: mdi:movie-open
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.storage_library_used_storage
+                name: Used
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.storage_library_available_storage
+                name: Free
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.media_disk_health
+                name: Health
+                icon: mdi:heart-pulse
+                card_mod:
+                  class: glass
+          - type: tile
+            entity: sensor.qbittorrent_download_speed
+            name: Downloading
+            icon: mdi:download
             grid_options:
-              columns: 12
-              rows: 3.5
+              columns: full
+            hold_action:
+              action: url
+              url_path: https://qb.home.amondsen.uk
+            icon_hold_action:
+              action: url
+              url_path: https://qb.home.amondsen.uk
             card_mod:
-              style: |
-                ha-card {
-                  background: none;
-                  border: none;
-                  box-shadow: none;
-                  backdrop-filter: none;
-                }
-          - type: custom:mod-card
+              class: glass
+          - type: heading
+            heading: Jellyfin
+            heading_style: subtitle
+            icon: phu:jellyfin
+            tap_action:
+              action: url
+              url_path: https://jellyfin.home.amondsen.uk
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.jellyfin_films
+                name: Films
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.jellyfin_shows
+                name: Shows
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.jellyfin_episodes
+                name: Episodes
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: Immich
+            heading_style: subtitle
+            icon: phu:immich
+            tap_action:
+              action: url
+              url_path: https://immich.home.amondsen.uk
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.nathaniel_photos_count
+                name: Photos
+                icon: mdi:image-multiple
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.nathaniel_videos_count
+                name: Videos
+                icon: mdi:video
+                card_mod:
+                  class: glass
+      - type: grid
+        cards:
+          - type: custom:bubble-card
+            card_type: separator
+            name: Devices
+            icon: mdi:devices
+          - type: heading
+            heading: Windows PC
+            heading_style: subtitle
+            icon: mdi:microsoft-windows
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.pc_status
+                name: Status
+                card_mod:
+                  class: glass
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: sensor.windows_pc_activewindow
+                    state_not: unavailable
+                card:
+                  type: tile
+                  entity: sensor.windows_pc_activewindow
+                  name: Active window
+                  icon: mdi:application-outline
+                  card_mod:
+                    class: glass
+          - type: conditional
+            conditions:
+              - condition: state
+                entity: sensor.windows_pc_cpuload
+                state_not: unavailable
             card:
               type: vertical-stack
               cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Devices
-                  icon: mdi:devices
-                - type: heading
-                  heading: Windows PC
-                  heading_style: subtitle
-                  icon: mdi:microsoft-windows
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.pc_status
-                      name: Status
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.windows_pc_activewindow
-                      name: Active window
-                      icon: mdi:application-outline
-                      card_mod:
-                        class: glass
                 - type: horizontal-stack
                   cards:
                     - type: tile
                       entity: sensor.windows_pc_cpuload
-                      name: CPU Load
+                      name: CPU
                       icon: mdi:cpu-64-bit
                       card_mod:
                         class: glass
                     - type: tile
                       entity: sensor.windows_pc_gpuload
-                      name: GPU Load
+                      name: GPU
                       icon: mdi:expansion-card
                       card_mod:
                         class: glass
@@ -401,28 +701,26 @@ views:
                   cards:
                     - type: tile
                       entity: sensor.windows_pc_memoryusage
-                      name: RAM Usage
+                      name: RAM
                       icon: mdi:memory
                       card_mod:
                         class: glass
                     - type: tile
                       entity: sensor.windows_pc_lastboot
                       name: Last boot
-                      icon: mdi:restart
+                      icon: mdi:clock-start
                       card_mod:
                         class: glass
                 - type: horizontal-stack
                   cards:
                     - type: tile
                       entity: sensor.pc_c_free
-                      name: 'C: Free'
-                      icon: mdi:harddisk
+                      name: 'C: free'
                       card_mod:
                         class: glass
                     - type: tile
                       entity: sensor.pc_d_free
-                      name: 'D: Free'
-                      icon: mdi:harddisk
+                      name: 'D: free'
                       card_mod:
                         class: glass
                 - type: horizontal-stack
@@ -466,6 +764,13 @@ views:
                           entity_id: button.windows_pc_restart
                         confirmation:
                           text: Restart the PC?
+                      icon_tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_restart
+                        confirmation:
+                          text: Restart the PC?
                       card_mod:
                         class: glass
                     - type: tile
@@ -481,11 +786,18 @@ views:
                           entity_id: button.windows_pc_shutdown
                         confirmation:
                           text: Shut down the PC?
+                      icon_tap_action:
+                        action: perform-action
+                        perform_action: button.press
+                        target:
+                          entity_id: button.windows_pc_shutdown
+                        confirmation:
+                          text: Shut down the PC?
                       card_mod:
                         class: glass
                     - type: tile
                       entity: button.windows_pc_monitorsleep
-                      name: Screen Off
+                      name: Screen off
                       icon: mdi:monitor-off
                       vertical: true
                       hide_state: true
@@ -496,291 +808,260 @@ views:
                           entity_id: button.windows_pc_monitorsleep
                       card_mod:
                         class: glass
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: heading
-                  heading: S25 Ultra
-                  heading_style: subtitle
-                  icon: mdi:cellphone
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.s25_ultra_battery_level
-                      name: Battery
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.s25_ultra_battery_state
-                      name: Charging
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.s25_ultra_internal_storage
-                      name: Storage
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: device_tracker.s25_ultra
-                      name: Location
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.phone_next_alarm
-                      name: Next alarm
-                      icon: mdi:alarm
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.s25_ultra_daily_steps
-                      name: Steps
-                      icon: mdi:walk
-                      card_mod:
-                        class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.s25_ultra_wi_fi_connection
-                      name: WiFi
-                      icon: mdi:wifi
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.s25_ultra_s25_ultra_last_app
-                      name: Last used app
-                      icon: mdi:cellphone-screenshot
-                      card_mod:
-                        class: glass
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: heading
-                  heading: Tab S11 Ultra
-                  heading_style: subtitle
-                  icon: mdi:tablet
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.tab_s11_ultra_battery_level
-                      name: Battery
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.tab_s11_ultra_battery_state
-                      name: Charging
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.tab_s11_ultra_internal_storage
-                      name: Storage
-                      icon: mdi:harddisk
-                      card_mod:
-                        class: glass
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: device_tracker.tab_s11_ultra
-                      name: Location
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.tab_s11_ultra_wi_fi_connection
-                      name: WiFi
-                      icon: mdi:wifi
-                      card_mod:
-                        class: glass
+          - type: heading
+            heading: S25 Ultra
+            heading_style: subtitle
+            icon: mdi:cellphone
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.s25_ultra_battery_level
+                name: Battery
+                card_mod:
+                  class: glass
+                  style: >
+                    /* Grey like every other icon; only goes red when the battery is
+                    actually low */
+
+                    ha-card {
+                      --tile-color: {{ 'var(--red-color)' if states(config.entity) | int(100) <= 20 else 'var(--state-inactive-color)' }} !important;
+                    }
+              - type: tile
+                entity: sensor.s25_ultra_internal_storage
+                name: Storage
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: device_tracker.s25_ultra
+                name: Location
+                card_mod:
+                  class: glass
+                  style: >
+                    /* Grey 'home' badge instead of green, so the only green stays
+                    AdGuard */
+
+                    ha-tile-badge {
+                      --tile-badge-background-color: var(--state-inactive-color) !important;
+                    }
+              - type: tile
+                entity: sensor.s25_ultra_wi_fi_connection
+                name: WiFi
+                icon: mdi:wifi
+                card_mod:
+                  class: glass
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.phone_next_alarm
+                name: Next alarm
+                icon: mdi:alarm
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.s25_ultra_daily_steps
+                name: Steps
+                icon: mdi:walk
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: Tab S11 Ultra
+            heading_style: subtitle
+            icon: mdi:tablet
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.tab_s11_ultra_battery_level
+                name: Battery
+                card_mod:
+                  class: glass
+                  style: >
+                    /* Grey like every other icon; only goes red when the battery is
+                    actually low */
+
+                    ha-card {
+                      --tile-color: {{ 'var(--red-color)' if states(config.entity) | int(100) <= 20 else 'var(--state-inactive-color)' }} !important;
+                    }
+              - type: tile
+                entity: sensor.tab_s11_ultra_internal_storage
+                name: Storage
+                icon: mdi:harddisk
+                card_mod:
+                  class: glass
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: device_tracker.tab_s11_ultra
+                name: Location
+                card_mod:
+                  class: glass
+                  style: >
+                    /* Grey 'home' badge instead of green, so the only green stays
+                    AdGuard */
+
+                    ha-tile-badge {
+                      --tile-badge-background-color: var(--state-inactive-color) !important;
+                    }
+              - type: tile
+                entity: sensor.tab_s11_ultra_wi_fi_connection
+                name: WiFi
+                icon: mdi:wifi
+                card_mod:
+                  class: glass
       - type: grid
         cards:
-          - type: markdown
-            text_only: true
-            content: >-
-              {% set d = now().day %}
-
-              {% set suf = 'th' if d in [11,12,13] else
-              {1:'st',2:'nd',3:'rd'}.get(d % 10, 'th') %}
-
-              # {{ now().strftime('%H:%M') }}
-
-              {{ now().strftime('%A') }}, {{ d }}{{ suf }} {{ now().strftime('%B
-              %Y') }}
-            grid_options:
-              rows: 3.5
-              columns: 12
+          - type: custom:bubble-card
+            card_type: separator
+            name: Tailscale
+            icon: phu:tailscale
+            sub_button:
+              - icon: mdi:open-in-new
+                tap_action:
+                  action: url
+                  url_path: https://login.tailscale.com/admin/machines
+          - type: heading
+            heading: Last seen
+            heading_style: subtitle
+            icon: mdi:clock-outline
+          - type: entities
             card_mod:
-              style:
-                ha-markdown$: |
-                  h1 {
-                    font-size: 6.5em !important;
-                    font-weight: 700 !important;
-                    margin: 0 !important;
-                    line-height: 1 !important;
-                    letter-spacing: -0.02em;
-                  }
-                  p {
-                    font-size: 1.25em !important;
-                    opacity: 0.6;
-                    margin: 10px 0 0 0 !important;
-                  }
-                .: |
-                  ha-card {
-                    text-align: right;
-                    background: none;
-                    border: none;
-                    box-shadow: none;
-                    padding-top: 30px;
-                  }
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Tailscale
-                  icon: phu:tailscale
-                  sub_button:
-                    - icon: mdi:open-in-new
-                      tap_action:
-                        action: url
-                        url_path: https://login.tailscale.com/admin/machines
-                - type: heading
-                  heading_style: subtitle
-                - type: entities
-                  card_mod:
-                    class: glass
-                  entities:
-                    - entity: sensor.pve_last_seen
-                      name: pve1
-                      icon: phu:proxmox
-                    - entity: sensor.home_assistant_last_seen
-                      name: voice-assistant
-                      icon: mdi:microphone
-                    - entity: sensor.nathanspc_last_seen
-                      name: windows-pc
-                      icon: mdi:desktop-tower-monitor
-                    - entity: sensor.macbook_pro_last_seen
-                      name: macbook-pro
-                      icon: phu:apple
-                    - entity: sensor.nathaniels_s25_ultra_last_seen
-                      name: s25-ultra
-                      icon: mdi:cellphone
-                    - entity: sensor.nathans_tab_s11_ultra_last_seen
-                      name: tab-s11
-                      icon: mdi:tablet
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Services
-                  icon: mdi:tools
-                - type: tile
-                  entity: binary_sensor.homepage_status
-                  name: Homepage
-                  icon: mdi:view-dashboard-variant
-                  hide_state: true
-                  color: none
+              class: glass
+            entities:
+              - entity: sensor.pve_last_seen
+                name: pve1
+                icon: phu:proxmox
+              - entity: sensor.pve2_last_seen
+                name: pve2
+                icon: phu:proxmox
+              - entity: sensor.home_assistant_last_seen
+                name: voice-assistant
+                icon: mdi:microphone
+              - entity: sensor.nathanspc_last_seen
+                name: windows-pc
+                icon: mdi:microsoft-windows
+              - entity: sensor.macbook_pro_last_seen
+                name: macbook-pro
+                icon: phu:apple
+              - entity: sensor.nathaniels_s25_ultra_last_seen
+                name: s25-ultra
+                icon: mdi:cellphone
+              - entity: sensor.nathans_tab_s11_ultra_last_seen
+                name: tab-s11
+                icon: mdi:tablet
+          - type: custom:bubble-card
+            card_type: separator
+            name: Services
+            icon: mdi:tools
+          - type: tile
+            entity: binary_sensor.homepage_status
+            name: Homepage
+            grid_options:
+              columns: full
+            icon: mdi:view-dashboard-variant
+            hide_state: true
+            color: none
+            tap_action:
+              action: url
+              url_path: https://homepage.home.amondsen.uk
+            icon_tap_action:
+              action: url
+              url_path: https://homepage.home.amondsen.uk
+            card_mod:
+              class: glass
+          - type: heading
+            heading: Nextcloud
+            heading_style: subtitle
+            icon: phu:nextcloud
+            tap_action:
+              action: url
+              url_path: https://nextcloud.amondsen.uk
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: update.nextcloud_amondsen_uk
+                name: Updates
+                icon: mdi:update
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.nextcloud_amondsen_uk_amount_of_active_users_last_5_minutes
+                name: Active users
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: amondsen.uk
+            heading_style: subtitle
+            icon: mdi:web
+          - type: tile
+            entity: sensor.amondsen_uk_days_until_expiration
+            name: Expires in
+            grid_options:
+              columns: full
+            icon: mdi:calendar-clock
+            card_mod:
+              class: glass
+          - type: custom:bubble-card
+            card_type: separator
+            name: Backups
+            icon: mdi:backup-restore
+          - type: heading
+            heading: Healthchecks
+            heading_style: subtitle
+            icon: mdi:clipboard-pulse
+            tap_action:
+              action: url
+              url_path: https://healthchecks.io/projects/32d37bb2-628f-4500-9e81-18e1ac0e5f9e/checks/
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.backups_status
+                name: Status
+                icon: mdi:heart-pulse
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.backups_failed_count
+                name: Failed
+                icon: mdi:alert-circle-outline
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: PBS
+            heading_style: subtitle
+            icon: phu:proxmox
+            tap_action:
+              action: url
+              url_path: https://pbs.home.amondsen.uk
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.storage_pbs_storage_usage_percentage
+                name: Datastore
+                card_mod:
+                  class: glass
+              # The PC's copy only reports while the PC is on; hidden otherwise so
+              # the main datastore takes the full row
+              - type: conditional
+                conditions:
+                  - condition: state
+                    entity: sensor.pbs_pc_datastore
+                    state_not: unavailable
+                  - condition: state
+                    entity: sensor.pbs_pc_datastore
+                    state_not: unknown
+                card:
+                  type: tile
+                  entity: sensor.pbs_pc_datastore
+                  name: PC copy
+                  icon: mdi:microsoft-windows
                   tap_action:
                     action: url
-                    url_path: https://homepage.amondsen.uk
+                    url_path: https://pbs-pc.home.amondsen.uk
                   icon_tap_action:
                     action: url
-                    url_path: https://homepage.amondsen.uk
-                  card_mod:
-                    class: glass
-                - type: heading
-                  heading: Nextcloud
-                  heading_style: subtitle
-                  icon: phu:nextcloud
-                  tap_action:
-                    action: url
-                    url_path: https://nextcloud.amondsen.uk
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: update.nextcloud_amondsen_uk
-                      name: Nextcloud Updates
-                      icon: mdi:update
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: >-
-                        sensor.nextcloud_amondsen_uk_amount_of_active_users_last_5_minutes
-                      name: Nextcloud Users
-                      card_mod:
-                        class: glass
-                - type: heading
-                  heading: Domain
-                  heading_style: subtitle
-                  icon: mdi:web
-                - type: tile
-                  entity: sensor.amondsen_uk_days_until_expiration
-                  name: amondsen.uk expiry
-                  icon: mdi:calendar-clock
-                  card_mod:
-                    class: glass
-          - type: custom:mod-card
-            card:
-              type: vertical-stack
-              cards:
-                - type: custom:bubble-card
-                  card_type: separator
-                  name: Backups
-                  icon: mdi:backup-restore
-                - type: conditional
-                  conditions:
-                    - condition: numeric_state
-                      entity: sensor.backups_failed_count
-                      above: 0
-                  card:
-                    type: markdown
-                    content: '**Backup check failing.** Check Healthchecks and ntfy.'
-                    card_mod:
-                      style: |
-                        ha-card {
-                          background: rgba(255, 255, 255, 0.04);
-                          backdrop-filter: blur(12px);
-                          border: 1px solid var(--error-color);
-                          border-radius: 12px;
-                          box-shadow: none;
-                          color: var(--error-color);
-                        }
-                - type: heading
-                  heading: Healthchecks
-                  heading_style: subtitle
-                  icon: mdi:clipboard-pulse
-                  tap_action:
-                    action: url
-                    url_path: https://healthchecks.io/
-                - type: horizontal-stack
-                  cards:
-                    - type: tile
-                      entity: sensor.backups_status
-                      name: Status
-                      icon: mdi:shield-check
-                      card_mod:
-                        class: glass
-                    - type: tile
-                      entity: sensor.backups_failed_count
-                      name: Failed
-                      icon: mdi:alert-circle-outline
-                      card_mod:
-                        class: glass
-                - type: heading
-                  heading: PBS
-                  heading_style: subtitle
-                  icon: phu:proxmox
-                  tap_action:
-                    action: url
-                    url_path: https://pbs.home.amondsen.uk
-                - type: tile
-                  entity: sensor.storage_pbs_storage_usage_percentage
-                  name: PBS datastore
+                    url_path: https://pbs-pc.home.amondsen.uk
                   card_mod:
                     class: glass
   - title: Home
