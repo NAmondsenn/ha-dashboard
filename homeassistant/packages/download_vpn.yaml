@@ -1,0 +1,25 @@
+# Download VPN: Gluetun on jellyfin-stack (CT 102 on pve2).
+# The key is read-only and only allows these two routes, the same ones Homepage uses.
+rest:
+  - resource: http://10.10.0.81:8000/v1/vpn/status
+    headers:
+      X-API-Key: !secret gluetun_api_key
+    scan_interval: 60
+    binary_sensor:
+      - name: Download VPN
+        unique_id: gluetun_vpn_connected
+        device_class: connectivity
+        value_template: "{{ value_json.status == 'running' }}"
+
+  - resource: http://10.10.0.81:8000/v1/publicip/ip
+    headers:
+      X-API-Key: !secret gluetun_api_key
+    scan_interval: 300
+    sensor:
+      - name: Download VPN country
+        unique_id: gluetun_vpn_country
+        icon: mdi:earth
+        value_template: "{{ value_json.country | default('Unknown', true) }}"
+        json_attributes:
+          - city
+          - public_ip

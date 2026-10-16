@@ -1,0 +1,73 @@
+# Navidrome (CT 104 on pve2). Subsonic token auth: token = md5(password + salt).
+rest:
+  # What any player (Feishin, Symfonium, ...) is playing right now. Display only.
+  - resource: http://10.10.0.175:4533/rest/getNowPlaying
+    params: &navidrome_auth
+      u: !secret navidrome_user
+      t: !secret navidrome_token
+      s: !secret navidrome_salt
+      v: "1.16.1"
+      c: homeassistant
+      f: json
+    scan_interval: 15
+    sensor:
+      - name: Navidrome now playing
+        unique_id: navidrome_now_playing
+        icon: mdi:music
+        value_template: >
+          {% set e = value_json['subsonic-response'].nowPlaying.entry | default([]) %}
+          {{ (e | first).title if e else 'Nothing playing' }}
+        json_attributes_path: "$['subsonic-response'].nowPlaying.entry[0]"
+        json_attributes:
+          - title
+          - artist
+          - album
+          - playerName
+          - username
+          - minutesAgo
+
+  # Library size changes only when a scan runs, so every 10 minutes is plenty
+  - resource: http://10.10.0.175:4533/rest/getScanStatus
+    params: *navidrome_auth
+    scan_interval: 600
+    sensor:
+      - name: Navidrome songs
+        unique_id: navidrome_songs
+        icon: mdi:music-note
+        unit_of_measurement: songs
+        state_class: measurement
+        value_template: "{{ value_json['subsonic-response'].scanStatus.count }}"
+
+  # Cover art from Deezer's public search (no key), so Navidrome's token never ends up in an image link.
+  # Only the first artist and the title are sent, and only when the track changes (automation below).
+  - resource_template: >-
+      {%- set e = 'sensor.navidrome_now_playing' -%}
+      {%- set a = (state_attr(e, 'artist') or '') | regex_replace('[ ]*(,|&| feat[.]| ft[.]).*$', '') -%}
+      {%- set t = (state_attr(e, 'title') or '') | regex_replace('[ ]*[(]?(feat|ft)[.].*$', '') -%}
+      https://api.deezer.com/search?limit=1&q={{ (a ~ ' ' ~ t) | urlencode }}
+    scan_interval: 86400
+    sensor:
+      - name: Navidrome cover
+        unique_id: navidrome_cover
+        icon: mdi:image-album
+        value_template: >-
+          {%- set d = value_json.data | default([]) -%}
+          {{ d[0].album.cover_medium if d | count > 0 else 'none' }}
+
+automation:
+  - id: navidrome_cover_refresh
+    alias: Navidrome cover refresh
+    description: Looks up the cover on Deezer when the Navidrome track changes
+    mode: restart
+    triggers:
+      # to: null fires on track changes only, not on the minutesAgo attribute ticking over
+      - trigger: state
+        entity_id: sensor.navidrome_now_playing
+        to: null
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.to_state.state not in ['Nothing playing', 'unavailable', 'unknown'] }}"
+    actions:
+      - action: homeassistant.update_entity
+        target:
+          entity_id: sensor.navidrome_cover

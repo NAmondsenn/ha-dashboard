@@ -1,0 +1,31 @@
+# SoulSync (in the jellyfin-stack compose, not behind the VPN). Its API keys have full access; there is no read-only scope.
+# The response shape has moved between releases, so each template accepts the payload with or without a "data" wrapper.
+rest:
+  - resource: http://10.10.0.81:8008/api/v1/system/status
+    params:
+      api_key: !secret soulsync_api_key
+    scan_interval: 120
+    binary_sensor:
+      - name: SoulSync Soulseek
+        unique_id: soulsync_soulseek_connected
+        device_class: connectivity
+        icon: mdi:bird
+        value_template: >
+          {% set d = value_json.data if value_json.data is defined else value_json %}
+          {{ d.services.soulseek | bool(false) }}
+
+  # Failed tracks waiting for a retry
+  - resource: http://10.10.0.81:8008/api/v1/wishlist
+    params:
+      api_key: !secret soulsync_api_key
+      limit: 1
+    scan_interval: 600
+    sensor:
+      - name: SoulSync wishlist
+        unique_id: soulsync_wishlist
+        icon: mdi:playlist-remove
+        unit_of_measurement: tracks
+        state_class: measurement
+        value_template: >
+          {% set p = value_json.pagination if value_json.pagination is defined else value_json.data.pagination %}
+          {{ p.total }}

@@ -1,0 +1,39 @@
+# Windows PC values that should survive the PC going to sleep.
+# HASS.Agent goes offline when the PC sleeps and its sensors turn unavailable, so these
+# trigger-based sensors only update while the PC is reporting and keep the last value otherwise.
+# (C/D free moved here from configuration.yaml; same unique_ids, so the entity ids are unchanged.)
+template:
+  - triggers:
+      - trigger: state
+        entity_id:
+          - sensor.windows_pc_storage_c
+          - sensor.windows_pc_storage_d
+          - sensor.windows_pc_lastboot
+      # Catches values that sit unchanged, e.g. right after a reload
+      - trigger: time_pattern
+        minutes: /5
+    sensor:
+      # Drive space lives in attributes, so lift it into proper sensors
+      - name: PC C free
+        unique_id: pc_c_free
+        unit_of_measurement: GiB
+        device_class: data_size
+        state_class: measurement
+        state: >
+          {% set a = state_attr('sensor.windows_pc_storage_c', 'AvailableSpaceMB') %}
+          {{ (a / 1024) | round(1) if a is not none else this.state }}
+      - name: PC D free
+        unique_id: pc_d_free
+        unit_of_measurement: GiB
+        device_class: data_size
+        state_class: measurement
+        state: >
+          {% set a = state_attr('sensor.windows_pc_storage_d', 'AvailableSpaceMB') %}
+          {{ (a / 1024) | round(1) if a is not none else this.state }}
+      - name: PC last boot
+        unique_id: pc_last_boot
+        device_class: timestamp
+        icon: mdi:clock-start
+        state: >
+          {% set b = states('sensor.windows_pc_lastboot') %}
+          {{ b if b not in ['unavailable', 'unknown'] else this.state }}

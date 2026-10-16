@@ -1,0 +1,158 @@
+homeassistant:
+  packages: !include_dir_named packages
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+  extra_module_url:
+    # Load brand icons globally so they don't drop out after restarts
+    - /hacsfiles/custom-brand-icons/custom-brand-icons.js
+    # Load frontend modules globally so they don't drop out after restarts
+    - /hacsfiles/kiosk-mode/kiosk-mode.js
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+rest:
+  # Pool list, used for health of both pools in one call
+  - resource: https://10.10.0.40/api/v2.0/pool
+    headers:
+      Authorization: !secret truenas_auth
+    verify_ssl: false
+    scan_interval: 300
+    sensor:
+      - name: nas pool health
+        unique_id: truenas_nas_pool_health
+        value_template: >
+          {{ (value_json | selectattr('name', 'eq', 'nas') | first).status }}
+      - name: backups pool health
+        unique_id: truenas_backups_pool_health
+        value_template: >
+          {{ (value_json | selectattr('name', 'eq', 'backups') | first).status }}
+
+  # Root datasets give usable space, which is what you actually care about
+  - resource: https://10.10.0.40/api/v2.0/pool/dataset/id/nas
+    headers:
+      Authorization: !secret truenas_auth
+    verify_ssl: false
+    scan_interval: 300
+    sensor:
+      - name: nas pool used
+        unique_id: truenas_nas_pool_used
+        value_template: "{{ (value_json.used.parsed / 1024**3) | round(1) }}"
+        unit_of_measurement: GiB
+        device_class: data_size
+        state_class: measurement
+      - name: nas pool free
+        unique_id: truenas_nas_pool_free
+        value_template: "{{ (value_json.available.parsed / 1024**3) | round(1) }}"
+        unit_of_measurement: GiB
+        device_class: data_size
+        state_class: measurement
+
+  - resource: https://10.10.0.40/api/v2.0/pool/dataset/id/backups
+    headers:
+      Authorization: !secret truenas_auth
+    verify_ssl: false
+    scan_interval: 300
+    sensor:
+      - name: backups pool used
+        unique_id: truenas_backups_pool_used
+        value_template: "{{ (value_json.used.parsed / 1024**3) | round(1) }}"
+        unit_of_measurement: GiB
+        device_class: data_size
+        state_class: measurement
+      - name: backups pool free
+        unique_id: truenas_backups_pool_free
+        value_template: "{{ (value_json.available.parsed / 1024**3) | round(1) }}"
+        unit_of_measurement: GiB
+        device_class: data_size
+        state_class: measurement
+  - resource: https://healthchecks.io/api/v3/checks/
+    scan_interval: 300
+    headers:
+      X-Api-Key: !secret healthchecks_key
+    sensor:
+      - name: Backups status
+        unique_id: hc_backups_status
+        # "down" is the only status that matters; late is a warning, not a failure
+        value_template: >
+          {% set down = value_json.checks | selectattr('status','eq','down') | list %}
+          {% set late = value_json.checks | selectattr('status','eq','grace') | list %}
+          {% if down | count > 0 %}{{ down | count }} failed
+          {% elif late | count > 0 %}{{ late | count }} late
+          {% else %}All OK{% endif %}
+        json_attributes_path: "$"
+        json_attributes:
+          - checks
+
+      - name: Backups failed count
+        unique_id: hc_backups_failed
+        state_class: measurement
+        value_template: >
+          {{ value_json.checks | selectattr('status','eq','down') | list | count }}
+          
+  - resource: http://10.10.0.79:8096/Items/Counts
+    headers:
+      Authorization: !secret jellyfin_auth
+    # Library counts only change when something imports, so every 10 minutes is plenty
+    scan_interval: 600
+    sensor:
+      - name: Jellyfin Films
+        unique_id: jellyfin_films
+        value_template: "{{ value_json.MovieCount }}"
+        unit_of_measurement: films
+        icon: mdi:movie-open
+      - name: Jellyfin Shows
+        unique_id: jellyfin_shows
+        value_template: "{{ value_json.SeriesCount }}"
+        unit_of_measurement: shows
+        icon: mdi:television-classic
+      - name: Jellyfin Episodes
+        unique_id: jellyfin_episodes
+        value_template: "{{ value_json.EpisodeCount }}"
+        unit_of_measurement: episodes
+        icon: mdi:television-play
+
+  - resource: https://10.10.0.31:8007/api2/json/status/datastore-usage
+    verify_ssl: false
+    timeout: 10
+    scan_interval: 300
+    headers:
+      Authorization: !secret pbs_pc_auth
+    sensor:
+      - name: PBS PC datastore
+        unique_id: pbs_pc_datastore_usage
+        icon: mdi:database
+        unit_of_measurement: "%"
+        value_template: >-
+          {% set d = value_json.data | selectattr('store', 'eq', 'pc-copy') | first %}
+          {{ (d.used / d.total * 100) | round(0) }}
+
+template:
+  - sensor:
+      # One status that combines asleep (HASS.Agent offline) and locked
+      - name: PC status
+        unique_id: pc_status
+        state: >
+          {% if states('sensor.windows_pc_cpuload') in ['unavailable', 'unknown'] %}Asleep
+          {% elif states('sensor.windows_pc_sessionstate') == 'Locked' %}Locked
+          {% else %}In use{% endif %}
+        icon: >
+          {% if states('sensor.windows_pc_cpuload') in ['unavailable', 'unknown'] %}mdi:sleep
+          {% elif states('sensor.windows_pc_sessionstate') == 'Locked' %}mdi:lock
+          {% else %}mdi:monitor-dashboard{% endif %}
+
+      # Shows "None" instead of going unavailable when no alarm is set
+      - name: Phone next alarm
+        unique_id: phone_next_alarm
+        icon: mdi:alarm
+        state: >
+          {% set a = states('sensor.s25_ultra_next_alarm') %}
+          {% if a in ['unavailable', 'unknown', 'none', ''] %}No alarm
+          {% else %}{{ as_timestamp(a) | timestamp_custom('%a %H:%M') }}{% endif %}
