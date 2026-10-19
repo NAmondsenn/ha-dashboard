@@ -1,0 +1,52 @@
+{#- Homelab health checks, in one place. packages/homelab_health.yaml turns them into
+    sensor.homelab_issues, which the desktop banner, the phone summary and both navbar badges read.
+    A new service only needs adding to homelab_services() once it has a binary_sensor.<name>_status. -#}
+
+{%- macro homelab_services() -%}
+{{- ['truenas', 'nextcloud', 'vaultwarden', 'home_assistant', 'adguard', 'homepage', 'pbs', 'ntfy',
+     'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager'] | to_json -}}
+{%- endmacro -%}
+
+{#- Returns a JSON list of plain sentences, empty when all is well -#}
+{%- macro homelab_issues() -%}
+{%- set ns = namespace(down=[], issues=[]) -%}
+{%- for s in homelab_services() | from_json if is_state('binary_sensor.' ~ s ~ '_status', 'off') -%}
+  {%- set ns.down = ns.down + [s | replace('_', '-')] -%}
+{%- endfor -%}
+{%- if ns.down -%}
+  {%- set ns.issues = ns.issues + [ns.down | join(', ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] -%}
+{%- endif -%}
+{%- if states('binary_sensor.download_vpn') in ['off', 'unavailable'] -%}
+  {%- set ns.issues = ns.issues + ['Download VPN is down'] -%}
+{%- endif -%}
+{%- if is_state('binary_sensor.soulsync_soulseek', 'off') -%}
+  {%- set ns.issues = ns.issues + ['SoulSync is disconnected from Soulseek'] -%}
+{%- endif -%}
+{#- AdGuard is the tailnet's DNS server, so off Tailscale means names stop resolving away from home -#}
+{%- if is_state('binary_sensor.adguard_connected_to_control', 'off') -%}
+  {%- set ns.issues = ns.issues + ['AdGuard is off Tailscale, so remote DNS is down'] -%}
+{%- endif -%}
+{%- for e, label in [('sensor.nas_pool_health', 'NAS pool'), ('sensor.backups_pool_health', 'Backups pool'),
+                     ('sensor.media_disk_health', 'Media disk')] if states(e) != 'ONLINE' -%}
+  {%- set ns.issues = ns.issues + [label ~ ' is ' ~ states(e) | lower] -%}
+{%- endfor -%}
+{#- Names the failing checks rather than counting them -#}
+{%- set failing = (state_attr('sensor.healthchecks_status', 'checks') or []) | selectattr('status', 'eq', 'down')
+                  | map(attribute='name') | list -%}
+{%- if failing -%}
+  {%- set ns.issues = ns.issues + ['Healthchecks: ' ~ failing | join(', ') ~ ' failing'] -%}
+{%- endif -%}
+{%- set days = states('sensor.amondsen_uk_days_until_expiration') | int(999) -%}
+{%- if days < 30 -%}
+  {%- set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] -%}
+{%- endif -%}
+{%- set lvm = states('sensor.pve2_local_lvm_storage_usage_percentage') | float(0) -%}
+{%- if lvm > 85 -%}
+  {%- set ns.issues = ns.issues + ['pve2 local-lvm at ' ~ lvm | round(0) | int ~ '%'] -%}
+{%- endif -%}
+{%- set free = states('sensor.storage_library_available_storage') | float(999) -%}
+{%- if free < 50 -%}
+  {%- set ns.issues = ns.issues + ['Media disk down to ' ~ free | round(0) | int ~ ' GiB free'] -%}
+{%- endif -%}
+{{- ns.issues | to_json -}}
+{%- endmacro -%}

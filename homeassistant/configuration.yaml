@@ -18,6 +18,16 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+# The PBS copy is a VM on the PC (10.10.0.31), so it can't be reached while the PC sleeps.
+# Without these filters the PBS PC datastore sensor logs an error every 5 minutes.
+logger:
+  default: warning
+  filters:
+    homeassistant.components.rest.data:
+      - "10\\.10\\.0\\.31:8007"
+    homeassistant.components.sensor:
+      - "10\\.10\\.0\\.31:8007"
+
 rest:
   # Pool list, used for health of both pools in one call
   - resource: https://10.10.0.40/api/v2.0/pool
@@ -73,30 +83,32 @@ rest:
         unit_of_measurement: GiB
         device_class: data_size
         state_class: measurement
+  # Every Healthchecks check, not just backups: backup jobs, chores, the download VPN, the PC copy
   - resource: https://healthchecks.io/api/v3/checks/
     scan_interval: 300
     headers:
       X-Api-Key: !secret healthchecks_key
     sensor:
-      - name: Backups status
+      - name: Healthchecks status
         unique_id: hc_backups_status
-        # "down" is the only status that matters; late is a warning, not a failure
+        # "down" is the only status that matters; late is a warning, not a failure.
+        # Names the checks, so the dashboards say which one it is
         value_template: >
-          {% set down = value_json.checks | selectattr('status','eq','down') | list %}
-          {% set late = value_json.checks | selectattr('status','eq','grace') | list %}
-          {% if down | count > 0 %}{{ down | count }} failed
-          {% elif late | count > 0 %}{{ late | count }} late
+          {% set down = value_json.checks | selectattr('status','eq','down') | map(attribute='name') | list %}
+          {% set late = value_json.checks | selectattr('status','eq','grace') | map(attribute='name') | list %}
+          {% if down %}{{ (down | join(', ') ~ ' failed')[:255] }}
+          {% elif late %}{{ (late | join(', ') ~ ' late')[:255] }}
           {% else %}All OK{% endif %}
         json_attributes_path: "$"
         json_attributes:
           - checks
 
-      - name: Backups failed count
+      - name: Healthchecks failing
         unique_id: hc_backups_failed
         state_class: measurement
         value_template: >
           {{ value_json.checks | selectattr('status','eq','down') | list | count }}
-          
+
   - resource: http://10.10.0.79:8096/Items/Counts
     headers:
       Authorization: !secret jellyfin_auth

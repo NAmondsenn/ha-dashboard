@@ -13,20 +13,9 @@ navbar-templates:
         badge:
           show: |
             [[[
-              // Same checks as the attention strip on Homelab, so trouble shows from every view
-              const st = (id) => states[id]?.state;
-              const num = (id) => parseFloat(st(id));
-              const services = ['truenas', 'nextcloud', 'vaultwarden', 'home_assistant', 'adguard',
-                'homepage', 'pbs', 'ntfy', 'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager'];
-              const health = ['sensor.nas_pool_health', 'sensor.backups_pool_health', 'sensor.media_disk_health'];
-              return services.some((s) => st(`binary_sensor.${s}_status`) === 'off')
-                || ['off', 'unavailable'].includes(st('binary_sensor.download_vpn'))
-                || st('binary_sensor.soulsync_soulseek') === 'off'
-                || health.some((h) => st(h) !== 'ONLINE')
-                || num('sensor.backups_failed_count') > 0
-                || num('sensor.amondsen_uk_days_until_expiration') < 30
-                || num('sensor.storage_local_lvm_storage_usage_percentage_2') > 85
-                || num('sensor.storage_library_available_storage') < 50;
+              // Lit when sensor.homelab_issues finds anything (checks in custom_templates/homelab.jinja),
+              // so trouble shows from every view
+              return parseInt(states['sensor.homelab_issues']?.state) > 0;
             ]]]
           color: var(--error-color)
       - url: /dashboard-home/home
@@ -275,19 +264,18 @@ views:
               url_path: https://calendar.google.com
             card_mod:
               class: glass
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#add-event'
+            name: Add event
+            icon: mdi:calendar-plus
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
+            open_action:
+              action: perform-action
+              perform_action: script.calendar_form_prepare
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#add-event'
-                name: Add event
-                icon: mdi:calendar-plus
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
-                open_action:
-                  action: perform-action
-                  perform_action: script.calendar_form_prepare
               - type: entities
                 card_mod:
                   class: glass
@@ -395,6 +383,8 @@ views:
                     content: >-
                       {%- set e = 'sensor.navidrome_now_playing' -%}
 
+                      {%- set n = (state_attr(e, 'entry') or [{}]) | first -%}
+
                       {%- set c = states('sensor.navidrome_cover') -%}
 
                       <table><tr>
@@ -403,9 +393,8 @@ views:
                       else %}<ha-icon icon="mdi:music"></ha-icon>{% endif
                       %}</td>
 
-                      <td><b>{{ state_attr(e, 'title') }}</b><br>{{
-                      state_attr(e, 'artist') }}<br><small>Navidrome · {{
-                      state_attr(e, 'playerName') }}</small></td>
+                      <td><b>{{ n.title }}</b><br>{{ n.artist
+                      }}<br><small>Navidrome · {{ n.playerName }}</small></td>
 
                       </tr></table>
                     card_mod:
@@ -839,76 +828,16 @@ views:
                         justify-content: flex-start;
                       }
           - type: markdown
-            show_empty: false
             grid_options:
               columns: full
             content: >-
-              {#- Renders nothing while all is well, so show_empty: false hides
-              the card. Keep in step with the navbar badge. -#}
-
-              {%- set ns = namespace(issues=[]) -%}
-
-              {%- for s in ['truenas', 'nextcloud', 'vaultwarden',
-              'home_assistant', 'adguard', 'homepage', 'pbs', 'ntfy',
-              'jellyfin', 'immich', 'jellyfin_stack', 'navidrome',
-              'nginxproxymanager'] -%}
-                {%- if is_state('binary_sensor.' ~ s ~ '_status', 'off') -%}
-                  {%- set ns.issues = ns.issues + [s | replace('_', '-') ~ ' down'] -%}
-                {%- endif -%}
-              {%- endfor -%}
-
-              {%- if states('binary_sensor.download_vpn') in ['off',
-              'unavailable'] -%}
-                {%- set ns.issues = ns.issues + ['download VPN down'] -%}
-              {%- endif -%}
-
-              {%- if is_state('binary_sensor.soulsync_soulseek', 'off') -%}
-                {%- set ns.issues = ns.issues + ['soulseek disconnected'] -%}
-              {%- endif -%}
-
-              {%- for e, label in [('sensor.nas_pool_health', 'nas pool'),
-              ('sensor.backups_pool_health', 'backups pool'),
-              ('sensor.media_disk_health', 'media disk')] -%}
-                {%- if states(e) != 'ONLINE' -%}
-                  {%- set ns.issues = ns.issues + [label ~ ' ' ~ states(e) | lower] -%}
-                {%- endif -%}
-              {%- endfor -%}
-
-              {%- set failed = states('sensor.backups_failed_count') | int(0)
-              -%}
-
-              {%- if failed > 0 -%}
-                {%- set ns.issues = ns.issues + [failed ~ ' check' ~ ('s' if failed > 1 else '') ~ ' failing'] -%}
-              {%- endif -%}
-
-              {%- set days = states('sensor.amondsen_uk_days_until_expiration')
-              | int(999) -%}
-
-              {%- if days < 30 -%}
-                {%- set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] -%}
-              {%- endif -%}
-
-              {%- set lvm =
-              states('sensor.storage_local_lvm_storage_usage_percentage_2') |
-              float(0) -%}
-
-              {%- if lvm > 85 -%}
-                {%- set ns.issues = ns.issues + ['pve2 local-lvm at ' ~ lvm | round(0) | int ~ '%'] -%}
-              {%- endif -%}
-
-              {%- set free = states('sensor.storage_library_available_storage')
-              | float(999) -%}
-
-              {%- if free < 50 -%}
-                {%- set ns.issues = ns.issues + ['media disk down to ' ~ free | round(0) | int ~ ' GiB free'] -%}
-              {%- endif -%}
-
-              {%- if ns.issues | count > 0 -%}
-
+              {#- Only shown while sensor.homelab_issues is above 0 (visibility
+              condition). show_empty: false
+                  can't do this: HA detaches a hidden card, so its template stops updating and it never comes back.
+                  The checks are in custom_templates/homelab.jinja. -#}
               <ha-icon icon="mdi:alert-circle-outline"></ha-icon> **Needs
-              attention:** {{ ns.issues | join(', ') }}
-
-              {%- endif -%}
+              attention:** {{ (state_attr('sensor.homelab_issues', 'issues') or
+              []) | join(' · ') }}
             card_mod:
               class: glass
               style:
@@ -935,6 +864,10 @@ views:
                     border-color: var(--error-color) !important;
                     color: var(--error-color);
                   }
+            visibility:
+              - condition: numeric_state
+                entity: sensor.homelab_issues
+                above: 0
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -951,24 +884,24 @@ views:
           - type: horizontal-stack
             cards:
               - type: tile
-                entity: sensor.bedroom_pve1_cpu_usage
+                entity: sensor.pve1_cpu_usage
                 name: CPU
                 card_mod:
                   class: glass
               - type: tile
-                entity: sensor.bedroom_pve1_memory_usage_percentage
+                entity: sensor.pve1_memory_usage_percentage
                 name: RAM
                 card_mod:
                   class: glass
           - type: horizontal-stack
             cards:
               - type: tile
-                entity: sensor.bedroom_pve1_uptime
+                entity: sensor.pve1_uptime
                 name: Uptime
                 card_mod:
                   class: glass
               - type: tile
-                entity: sensor.storage_local_lvm_storage_usage_percentage
+                entity: sensor.pve1_local_lvm_storage_usage_percentage
                 name: local-lvm
                 card_mod:
                   class: glass
@@ -1063,7 +996,7 @@ views:
                 card_mod:
                   class: glass
               - type: tile
-                entity: sensor.storage_local_lvm_storage_usage_percentage_2
+                entity: sensor.pve2_local_lvm_storage_usage_percentage
                 name: local-lvm
                 card_mod:
                   class: glass
@@ -1150,6 +1083,29 @@ views:
               - type: tile
                 entity: sensor.adguard_home_dns_queries
                 name: Queries
+                card_mod:
+                  class: glass
+          - type: heading
+            heading: Download VPN
+            heading_style: subtitle
+            icon: mdi:vpn
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: binary_sensor.download_vpn
+                name: Status
+                card_mod:
+                  class: glass
+                  style: >
+                    /* Grey like every other icon; only goes red when the VPN is
+                    down */
+
+                    ha-card {
+                      --tile-color: {{ 'var(--red-color)' if not is_state(config.entity, 'on') else 'var(--state-inactive-color)' }} !important;
+                    }
+              - type: tile
+                entity: sensor.download_vpn_country
+                name: Exit country
                 card_mod:
                   class: glass
           - type: heading
@@ -1306,14 +1262,26 @@ views:
             tap_action:
               action: url
               url_path: https://navidrome.home.amondsen.uk
-          - type: tile
-            entity: sensor.navidrome_songs
-            name: Songs
-            icon: mdi:music-note
-            card_mod:
-              class: glass
-            grid_options:
-              columns: full
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.navidrome_songs
+                name: Songs
+                icon: mdi:music-note
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.navidrome_albums
+                name: Albums
+                icon: mdi:album
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.navidrome_artists
+                name: Artists
+                icon: mdi:account-music
+                card_mod:
+                  class: glass
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -1790,20 +1758,14 @@ views:
               action: url
               url_path: >-
                 https://healthchecks.io/projects/32d37bb2-628f-4500-9e81-18e1ac0e5f9e/checks/
-          - type: horizontal-stack
-            cards:
-              - type: tile
-                entity: sensor.backups_status
-                name: Status
-                icon: mdi:heart-pulse
-                card_mod:
-                  class: glass
-              - type: tile
-                entity: sensor.backups_failed_count
-                name: Failed
-                icon: mdi:alert-circle-outline
-                card_mod:
-                  class: glass
+          - type: tile
+            entity: sensor.healthchecks_status
+            name: Status
+            icon: mdi:heart-pulse
+            grid_options:
+              columns: full
+            card_mod:
+              class: glass
           - type: heading
             heading: PBS
             heading_style: subtitle
@@ -2132,19 +2094,18 @@ views:
             grid_options:
               rows: 8
               columns: full
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#add-event'
+            name: Add event
+            icon: mdi:calendar-plus
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
+            open_action:
+              action: perform-action
+              perform_action: script.calendar_form_prepare
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#add-event'
-                name: Add event
-                icon: mdi:calendar-plus
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
-                open_action:
-                  action: perform-action
-                  perform_action: script.calendar_form_prepare
               - type: entities
                 card_mod:
                   class: glass

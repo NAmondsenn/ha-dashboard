@@ -15,20 +15,9 @@ navbar-templates:
         badge:
           show: |
             [[[
-              // Same checks as the status card on Homelab, so trouble shows from every view
-              const st = (id) => states[id]?.state;
-              const num = (id) => parseFloat(st(id));
-              const services = ['truenas', 'nextcloud', 'vaultwarden', 'home_assistant', 'adguard',
-                'homepage', 'pbs', 'ntfy', 'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager'];
-              const health = ['sensor.nas_pool_health', 'sensor.backups_pool_health', 'sensor.media_disk_health'];
-              return services.some((s) => st(`binary_sensor.${s}_status`) === 'off')
-                || ['off', 'unavailable'].includes(st('binary_sensor.download_vpn'))
-                || st('binary_sensor.soulsync_soulseek') === 'off'
-                || health.some((h) => st(h) !== 'ONLINE')
-                || num('sensor.backups_failed_count') > 0
-                || num('sensor.amondsen_uk_days_until_expiration') < 30
-                || num('sensor.storage_local_lvm_storage_usage_percentage_2') > 85
-                || num('sensor.storage_library_available_storage') < 50;
+              // Lit when sensor.homelab_issues finds anything (checks in custom_templates/homelab.jinja),
+              // so trouble shows from every view
+              return parseInt(states['sensor.homelab_issues']?.state) > 0;
             ]]]
           color: var(--error-color)
       - url: /dashboard-mobile/home
@@ -190,80 +179,19 @@ views:
         cards:
           - type: markdown
             content: >-
-              {#- Always shown on the phone as the one-glance summary. Same
-              checks as the navbar badge and the desktop strip. -#}
+              {#- Always shown on the phone as the one-glance summary. The
+              checks are in
+                  custom_templates/homelab.jinja (sensor.homelab_issues), shared with the desktop strip and the badges. -#}
+              {%- set issues = state_attr('sensor.homelab_issues', 'issues') or
+              [] -%}
 
-              {%- set services = ['truenas', 'nextcloud', 'vaultwarden',
-              'home_assistant', 'adguard', 'homepage', 'pbs', 'ntfy',
-              'jellyfin', 'immich', 'jellyfin_stack', 'navidrome',
-              'nginxproxymanager'] -%}
+              {%- if issues %}
 
-              {%- set ns = namespace(down=[], issues=[]) -%}
-
-              {%- for s in services -%}
-                {%- if is_state('binary_sensor.' ~ s ~ '_status', 'off') -%}
-                  {%- set ns.down = ns.down + [s | replace('_', '-')] -%}
-                {%- endif -%}
-              {%- endfor -%}
-
-              {%- if ns.down -%}
-                {%- set ns.issues = ns.issues + [ns.down | join(', ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] -%}
-              {%- endif -%}
-
-              {%- if states('binary_sensor.download_vpn') in ['off',
-              'unavailable'] -%}
-                {%- set ns.issues = ns.issues + ['Download VPN is down'] -%}
-              {%- endif -%}
-
-              {%- if is_state('binary_sensor.soulsync_soulseek', 'off') -%}
-                {%- set ns.issues = ns.issues + ['SoulSync is disconnected from Soulseek'] -%}
-              {%- endif -%}
-
-              {%- for e, label in [('sensor.nas_pool_health', 'NAS pool'),
-              ('sensor.backups_pool_health', 'Backups pool'),
-              ('sensor.media_disk_health', 'Media disk')] -%}
-                {%- if states(e) != 'ONLINE' -%}
-                  {%- set ns.issues = ns.issues + [label ~ ' is ' ~ states(e) | lower] -%}
-                {%- endif -%}
-              {%- endfor -%}
-
-              {%- set failed = states('sensor.backups_failed_count') | int(0)
-              -%}
-
-              {%- if failed > 0 -%}
-                {%- set ns.issues = ns.issues + [failed ~ ' check' ~ ('s' if failed > 1 else '') ~ ' failing · [Healthchecks](https://healthchecks.io/projects/32d37bb2-628f-4500-9e81-18e1ac0e5f9e/checks/)'] -%}
-              {%- endif -%}
-
-              {%- set days = states('sensor.amondsen_uk_days_until_expiration')
-              | int(999) -%}
-
-              {%- if days < 30 -%}
-                {%- set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] -%}
-              {%- endif -%}
-
-              {%- set lvm =
-              states('sensor.storage_local_lvm_storage_usage_percentage_2') |
-              float(0) -%}
-
-              {%- if lvm > 85 -%}
-                {%- set ns.issues = ns.issues + ['pve2 local-lvm at ' ~ lvm | round(0) | int ~ '%'] -%}
-              {%- endif -%}
-
-              {%- set free = states('sensor.storage_library_available_storage')
-              | float(999) -%}
-
-              {%- if free < 50 -%}
-                {%- set ns.issues = ns.issues + ['Media disk down to ' ~ free | round(0) | int ~ ' GiB free'] -%}
-              {%- endif -%}
-
-              {%- if ns.issues %}
-
-              ### <ha-icon icon="mdi:alert-circle-outline"></ha-icon> {{
-              ns.issues | count }} {{ 'issue' if ns.issues | count == 1 else
-              'issues' }}
+              ### <ha-icon icon="mdi:alert-circle-outline"></ha-icon> {{ issues
+              | count }} {{ 'issue' if issues | count == 1 else 'issues' }}
 
 
-              {% for i in ns.issues -%}
+              {% for i in issues -%}
 
               - {{ i }}
 
@@ -275,7 +203,8 @@ views:
               systems OK
 
 
-              {{ services | count }} services up · all checks passing
+              {{ state_attr('sensor.homelab_issues', 'services') }} services up
+              · all checks passing
 
               {%- endif %}
             card_mod:
@@ -343,6 +272,29 @@ views:
                 name: Blocked
                 card_mod:
                   class: glass
+          - type: heading
+            heading: Download VPN
+            heading_style: subtitle
+            icon: mdi:vpn
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: binary_sensor.download_vpn
+                name: Status
+                card_mod:
+                  class: glass
+                  style: >
+                    /* Grey like every other icon; only goes red when the VPN is
+                    down */
+
+                    ha-card {
+                      --tile-color: {{ 'var(--red-color)' if not is_state(config.entity, 'on') else 'var(--state-inactive-color)' }} !important;
+                    }
+              - type: tile
+                entity: sensor.download_vpn_country
+                name: Exit country
+                card_mod:
+                  class: glass
           - type: custom:bubble-card
             card_type: separator
             name: Media
@@ -404,14 +356,29 @@ views:
             tap_action:
               action: url
               url_path: https://navidrome.home.amondsen.uk
-          - type: tile
-            entity: sensor.navidrome_songs
-            name: Songs
-            icon: mdi:music-note
-            card_mod:
-              class: glass
-            grid_options:
-              columns: full
+          - type: horizontal-stack
+            cards:
+              - type: tile
+                entity: sensor.navidrome_songs
+                name: Songs
+                icon: mdi:music-note
+                vertical: true
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.navidrome_albums
+                name: Albums
+                icon: mdi:album
+                vertical: true
+                card_mod:
+                  class: glass
+              - type: tile
+                entity: sensor.navidrome_artists
+                name: Artists
+                icon: mdi:account-music
+                vertical: true
+                card_mod:
+                  class: glass
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -562,7 +529,7 @@ views:
                 card_mod:
                   class: glass
               - type: tile
-                entity: sensor.backups_status
+                entity: sensor.healthchecks_status
                 name: Healthchecks
                 icon: mdi:clipboard-pulse
                 hide_state: true
@@ -695,6 +662,8 @@ views:
                     content: >-
                       {%- set e = 'sensor.navidrome_now_playing' -%}
 
+                      {%- set n = (state_attr(e, 'entry') or [{}]) | first -%}
+
                       {%- set c = states('sensor.navidrome_cover') -%}
 
                       <table><tr>
@@ -703,9 +672,8 @@ views:
                       else %}<ha-icon icon="mdi:music"></ha-icon>{% endif
                       %}</td>
 
-                      <td><b>{{ state_attr(e, 'title') }}</b><br>{{
-                      state_attr(e, 'artist') }}<br><small>Navidrome · {{
-                      state_attr(e, 'playerName') }}</small></td>
+                      <td><b>{{ n.title }}</b><br>{{ n.artist
+                      }}<br><small>Navidrome · {{ n.playerName }}</small></td>
 
                       </tr></table>
                     card_mod:
@@ -1132,19 +1100,18 @@ views:
               url_path: https://calendar.google.com
             card_mod:
               class: glass
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#add-event'
+            name: Add event
+            icon: mdi:calendar-plus
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
+            open_action:
+              action: perform-action
+              perform_action: script.calendar_form_prepare
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#add-event'
-                name: Add event
-                icon: mdi:calendar-plus
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
-                open_action:
-                  action: perform-action
-                  perform_action: script.calendar_form_prepare
               - type: entities
                 card_mod:
                   class: glass
@@ -1400,16 +1367,15 @@ views:
               url_path: https://calendar.google.com
             card_mod:
               class: glass
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#todo'
+            name: To Do
+            icon: mdi:format-list-checks
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#todo'
-                name: To Do
-                icon: mdi:format-list-checks
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
               - type: todo-list
                 entity: todo.todo_long
                 display_order: none
@@ -1439,16 +1405,15 @@ views:
                         background: rgba(255, 255, 255, 0.04) !important;
                         border-radius: 10px 10px 0 0;
                       }
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#uni'
+            name: Uni Work
+            icon: mdi:school
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#uni'
-                name: Uni Work
-                icon: mdi:school
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
               - type: todo-list
                 entity: todo.uni_work
                 display_order: none
@@ -1478,16 +1443,15 @@ views:
                         background: rgba(255, 255, 255, 0.04) !important;
                         border-radius: 10px 10px 0 0;
                       }
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#shopping'
+            name: Shopping
+            icon: mdi:cart
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#shopping'
-                name: Shopping
-                icon: mdi:cart
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
               - type: todo-list
                 entity: todo.shopping_list
                 display_order: none
@@ -1517,16 +1481,15 @@ views:
                         background: rgba(255, 255, 255, 0.04) !important;
                         border-radius: 10px 10px 0 0;
                       }
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#notepad'
+            name: Notepad
+            icon: mdi:note-text
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#notepad'
-                name: Notepad
-                icon: mdi:note-text
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
               - type: todo-list
                 entity: todo.notepad
                 display_order: none
@@ -1562,19 +1525,18 @@ views:
                         background: rgba(255, 255, 255, 0.04) !important;
                         border-radius: 10px 10px 0 0;
                       }
-          - type: vertical-stack
+          - type: custom:bubble-card
+            card_type: pop-up
+            hash: '#add-event'
+            name: Add event
+            icon: mdi:calendar-plus
+            bg_color: '#141414'
+            bg_opacity: '75'
+            bg_blur: '16'
+            open_action:
+              action: perform-action
+              perform_action: script.calendar_form_prepare
             cards:
-              - type: custom:bubble-card
-                card_type: pop-up
-                hash: '#add-event'
-                name: Add event
-                icon: mdi:calendar-plus
-                bg_color: '#141414'
-                bg_opacity: '75'
-                bg_blur: '16'
-                open_action:
-                  action: perform-action
-                  perform_action: script.calendar_form_prepare
               - type: entities
                 card_mod:
                   class: glass

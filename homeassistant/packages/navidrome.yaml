@@ -17,14 +17,11 @@ rest:
         value_template: >
           {% set e = value_json['subsonic-response'].nowPlaying.entry | default([]) %}
           {{ (e | first).title if e else 'Nothing playing' }}
-        json_attributes_path: "$['subsonic-response'].nowPlaying.entry[0]"
+        # nowPlaying is {} when nothing plays, so this path always exists (entry[0] didn't, and HA
+        # logged a warning every 15 s). Cards read the track as (state_attr(e, 'entry') or [{}]) | first.
+        json_attributes_path: "$['subsonic-response'].nowPlaying"
         json_attributes:
-          - title
-          - artist
-          - album
-          - playerName
-          - username
-          - minutesAgo
+          - entry
 
   # Library size changes only when a scan runs, so every 10 minutes is plenty
   - resource: http://10.10.0.175:4533/rest/getScanStatus
@@ -38,12 +35,33 @@ rest:
         state_class: measurement
         value_template: "{{ value_json['subsonic-response'].scanStatus.count }}"
 
+  # Albums and artists: getArtists lists every album artist with its album count
+  - resource: http://10.10.0.175:4533/rest/getArtists
+    params: *navidrome_auth
+    scan_interval: 600
+    sensor:
+      - name: Navidrome artists
+        unique_id: navidrome_artists
+        icon: mdi:account-music
+        unit_of_measurement: artists
+        state_class: measurement
+        value_template: >
+          {{ value_json['subsonic-response'].artists.index | map(attribute='artist') | sum(start=[]) | count }}
+      - name: Navidrome albums
+        unique_id: navidrome_albums
+        icon: mdi:album
+        unit_of_measurement: albums
+        state_class: measurement
+        value_template: >
+          {{ value_json['subsonic-response'].artists.index | map(attribute='artist') | sum(start=[])
+             | map(attribute='albumCount') | sum }}
+
   # Cover art from Deezer's public search (no key), so Navidrome's token never ends up in an image link.
   # Only the first artist and the title are sent, and only when the track changes (automation below).
   - resource_template: >-
-      {%- set e = 'sensor.navidrome_now_playing' -%}
-      {%- set a = (state_attr(e, 'artist') or '') | regex_replace('[ ]*(,|&| feat[.]| ft[.]).*$', '') -%}
-      {%- set t = (state_attr(e, 'title') or '') | regex_replace('[ ]*[(]?(feat|ft)[.].*$', '') -%}
+      {%- set n = (state_attr('sensor.navidrome_now_playing', 'entry') or [{}]) | first -%}
+      {%- set a = (n.get('artist') or '') | regex_replace('[ ]*(,|&| feat[.]| ft[.]).*$', '') -%}
+      {%- set t = (n.get('title') or '') | regex_replace('[ ]*[(]?(feat|ft)[.].*$', '') -%}
       https://api.deezer.com/search?limit=1&q={{ (a ~ ' ' ~ t) | urlencode }}
     scan_interval: 86400
     sensor:

@@ -1,0 +1,19 @@
+# Everything on the homelab that needs attention, as one sensor: the state is how many problems
+# there are, the issues attribute says what they are. The checks themselves are in
+# custom_templates/homelab.jinja, so the dashboards no longer keep their own copies.
+template:
+  - sensor:
+      - name: Homelab issues
+        unique_id: homelab_issues
+        icon: mdi:alert-circle-outline
+        state: >
+          {% from 'homelab.jinja' import homelab_issues %}
+          {{ homelab_issues() | from_json | count }}
+        attributes:
+          issues: >
+            {% from 'homelab.jinja' import homelab_issues %}
+            {{ homelab_issues() | from_json }}
+          # How many status lights are watched, for the phone's all-clear line
+          services: >
+            {% from 'homelab.jinja' import homelab_services %}
+            {{ homelab_services() | from_json | count }}
