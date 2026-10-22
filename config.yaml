@@ -1053,6 +1053,25 @@ views:
                   url_path: https://homepage.home.amondsen.uk
                 hold_action:
                   action: more-info
+              - entity: binary_sensor.adguard2_status
+                name: adguard2
+                icon: phu:adguard
+                tap_action:
+                  action: url
+                  url_path: https://adguard2.home.amondsen.uk
+                hold_action:
+                  action: more-info
+              - entity: binary_sensor.nova_status
+                name: nova
+                icon: mdi:account-voice
+              - entity: binary_sensor.guacamole_status
+                name: guacamole
+                icon: phu:guacamole
+                tap_action:
+                  action: url
+                  url_path: https://guacamole.home.amondsen.uk
+                hold_action:
+                  action: more-info
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -1686,6 +1705,12 @@ views:
               - entity: binary_sensor.adguard_connected_to_control
                 name: adguard
                 icon: phu:adguard
+              - entity: binary_sensor.adguard2_connected_to_control
+                name: adguard2
+                icon: phu:adguard
+              - entity: binary_sensor.nova_connected_to_control
+                name: nova
+                icon: mdi:account-voice
               - entity: binary_sensor.bedroom_home_assistant_connected_to_control
                 name: voice-assistant
                 icon: mdi:microphone

@@ -451,6 +451,15 @@ views:
               - entity: binary_sensor.websites_status
                 name: websites
                 icon: mdi:web
+              - entity: binary_sensor.adguard2_status
+                name: adguard2
+                icon: phu:adguard
+              - entity: binary_sensor.nova_status
+                name: nova
+                icon: mdi:account-voice
+              - entity: binary_sensor.guacamole_status
+                name: guacamole
+                icon: phu:guacamole
           - type: custom:bubble-card
             card_type: separator
             name: Open
