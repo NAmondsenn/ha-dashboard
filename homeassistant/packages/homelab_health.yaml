@@ -17,3 +17,52 @@ template:
           services: >
             {% from 'homelab.jinja' import homelab_services %}
             {{ homelab_services() | from_json | count }}
+
+automation:
+  # One ntfy notification (homelab topic) that updates in place: the same sequence_id replaces the
+  # earlier message instead of stacking new ones, and the all-clear replaces the warning.
+  - id: homelab_issues_alert
+    alias: Homelab issues alert
+    description: Pushes the homelab issue list to ntfy once it has held for 5 minutes, and an all-clear when it empties
+    mode: queued
+    triggers:
+      # Waiting 5 minutes rides out restarts and API blips
+      - trigger: state
+        entity_id: sensor.homelab_issues
+        attribute: issues
+        for:
+          minutes: 5
+    conditions:
+      # Not when the sensor first appears after an HA restart
+      - condition: template
+        value_template: "{{ trigger.from_state is not none and trigger.from_state.state not in ['unknown', 'unavailable'] }}"
+    actions:
+      - variables:
+          issues: "{{ state_attr('sensor.homelab_issues', 'issues') or [] }}"
+          was: "{{ trigger.from_state.attributes.issues or [] }}"
+      - choose:
+          - conditions: "{{ issues | count > 0 }}"
+            sequence:
+              - action: ntfy.publish
+                target:
+                  entity_id: notify.homelab
+                data:
+                  title: "Homelab: {{ issues | count }} {{ 'issue' if issues | count == 1 else 'issues' }}"
+                  message: "{{ issues | join('\n') }}"
+                  priority: "4"
+                  tags:
+                    - warning
+                  click: https://ha.home.amondsen.uk/dashboard-home/homelab
+                  sequence_id: homelab-issues
+          - conditions: "{{ was | count > 0 }}"
+            sequence:
+              - action: ntfy.publish
+                target:
+                  entity_id: notify.homelab
+                data:
+                  title: "Homelab: all clear"
+                  message: Everything that was flagged is back to normal.
+                  priority: "2"
+                  tags:
+                    - white_check_mark
+                  sequence_id: homelab-issues

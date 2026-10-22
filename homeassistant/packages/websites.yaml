@@ -1,0 +1,40 @@
+# The public websites on the websites container (CT 105 on pve2), served through Cloudflare tunnels.
+# Checked through their public addresses, so a broken tunnel shows up even while the container runs.
+# Any answer below 500 counts as up; Cloudflare answers 502/530 when a tunnel or site is down,
+# and curl prints 000 when nothing answers at all.
+command_line:
+  - binary_sensor:
+      name: Website magdalena
+      unique_id: website_magdalena
+      command: "curl -s -o /dev/null -m 15 -w '%{http_code}' https://magdalena.amondsen.uk"
+      device_class: connectivity
+      value_template: "{{ 'ON' if value | int(0) in range(200, 500) else 'OFF' }}"
+      scan_interval: 300
+  - binary_sensor:
+      name: Website flashcards
+      unique_id: website_flashcards
+      command: "curl -s -o /dev/null -m 15 -w '%{http_code}' https://flashcards.amondsen.uk"
+      device_class: connectivity
+      value_template: "{{ 'ON' if value | int(0) in range(200, 500) else 'OFF' }}"
+      scan_interval: 300
+  - binary_sensor:
+      name: Website notes
+      unique_id: website_notes
+      command: "curl -s -o /dev/null -m 15 -w '%{http_code}' https://notes.amondsen.uk"
+      device_class: connectivity
+      value_template: "{{ 'ON' if value | int(0) in range(200, 500) else 'OFF' }}"
+      scan_interval: 300
+  - binary_sensor:
+      name: Website tidal
+      unique_id: website_tidal
+      command: "curl -s -o /dev/null -m 15 -w '%{http_code}' https://tidal.amondsen.uk"
+      device_class: connectivity
+      value_template: "{{ 'ON' if value | int(0) in range(200, 500) else 'OFF' }}"
+      scan_interval: 300
+  - binary_sensor:
+      name: Website fried
+      unique_id: website_fried
+      command: "curl -s -o /dev/null -m 15 -w '%{http_code}' https://fried.amondsen.uk"
+      device_class: connectivity
+      value_template: "{{ 'ON' if value | int(0) in range(200, 500) else 'OFF' }}"
+      scan_interval: 300

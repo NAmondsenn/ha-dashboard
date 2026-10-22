@@ -1,20 +1,40 @@
 {#- Homelab health checks, in one place. packages/homelab_health.yaml turns them into
-    sensor.homelab_issues, which the desktop banner, the phone summary and both navbar badges read.
-    A new service only needs adding to homelab_services() once it has a binary_sensor.<name>_status. -#}
+    sensor.homelab_issues, which the desktop banner, the phone summary, both navbar badges and the
+    ntfy alert read. A new service only needs adding to homelab_services() once it has a
+    binary_sensor.<name>_status. -#}
 
 {%- macro homelab_services() -%}
 {{- ['truenas', 'nextcloud', 'vaultwarden', 'home_assistant', 'adguard', 'homepage', 'pbs', 'ntfy',
-     'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager'] | to_json -}}
+     'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager', 'websites'] | to_json -}}
+{%- endmacro -%}
+
+{#- The public sites on the websites container, checked through Cloudflare (packages/websites.yaml) -#}
+{%- macro homelab_websites() -%}
+{{- [['binary_sensor.website_magdalena', 'magdalena.amondsen.uk'],
+     ['binary_sensor.website_flashcards', 'flashcards.amondsen.uk'],
+     ['binary_sensor.website_notes', 'notes.amondsen.uk'],
+     ['binary_sensor.website_tidal', 'tidal.amondsen.uk'],
+     ['binary_sensor.website_fried', 'fried.amondsen.uk']] | to_json -}}
 {%- endmacro -%}
 
 {#- Returns a JSON list of plain sentences, empty when all is well -#}
 {%- macro homelab_issues() -%}
-{%- set ns = namespace(down=[], issues=[]) -%}
+{%- set ns = namespace(down=[], sites=[], issues=[]) -%}
+{#- A node that can't be reached leaves its lights "unavailable" rather than "off", so check the node itself -#}
+{%- for n in ['pve1', 'pve2'] if states('binary_sensor.' ~ n ~ '_status') in ['off', 'unavailable'] -%}
+  {%- set ns.issues = ns.issues + [n ~ ' is unreachable'] -%}
+{%- endfor -%}
 {%- for s in homelab_services() | from_json if is_state('binary_sensor.' ~ s ~ '_status', 'off') -%}
   {%- set ns.down = ns.down + [s | replace('_', '-')] -%}
 {%- endfor -%}
 {%- if ns.down -%}
   {%- set ns.issues = ns.issues + [ns.down | join(', ') ~ (' is' if ns.down | count == 1 else ' are') ~ ' down'] -%}
+{%- endif -%}
+{%- for e, site in homelab_websites() | from_json if is_state(e, 'off') -%}
+  {%- set ns.sites = ns.sites + [site] -%}
+{%- endfor -%}
+{%- if ns.sites -%}
+  {%- set ns.issues = ns.issues + [ns.sites | join(', ') ~ (' is' if ns.sites | count == 1 else ' are') ~ ' not loading'] -%}
 {%- endif -%}
 {%- if states('binary_sensor.download_vpn') in ['off', 'unavailable'] -%}
   {%- set ns.issues = ns.issues + ['Download VPN is down'] -%}
@@ -40,9 +60,20 @@
 {%- if days < 30 -%}
   {%- set ns.issues = ns.issues + ['amondsen.uk expires in ' ~ days ~ ' days'] -%}
 {%- endif -%}
-{%- set lvm = states('sensor.pve2_local_lvm_storage_usage_percentage') | float(0) -%}
-{%- if lvm > 85 -%}
-  {%- set ns.issues = ns.issues + ['pve2 local-lvm at ' ~ lvm | round(0) | int ~ '%'] -%}
+{#- Memory and the nodes' own disks -#}
+{%- for n in ['pve1', 'pve2'] -%}
+  {%- set ram = states('sensor.' ~ n ~ '_memory_usage_percentage') | float(0) -%}
+  {%- if ram > 90 -%}
+    {%- set ns.issues = ns.issues + [n ~ ' RAM at ' ~ ram | round(0) | int ~ '%'] -%}
+  {%- endif -%}
+  {%- set lvm = states('sensor.' ~ n ~ '_local_lvm_storage_usage_percentage') | float(0) -%}
+  {%- if lvm > 85 -%}
+    {%- set ns.issues = ns.issues + [n ~ ' local-lvm at ' ~ lvm | round(0) | int ~ '%'] -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- set pbs = states('sensor.storage_pbs_storage_usage_percentage') | float(0) -%}
+{%- if pbs > 85 -%}
+  {%- set ns.issues = ns.issues + ['PBS datastore at ' ~ pbs | round(0) | int ~ '%'] -%}
 {%- endif -%}
 {%- set free = states('sensor.storage_library_available_storage') | float(999) -%}
 {%- if free < 50 -%}

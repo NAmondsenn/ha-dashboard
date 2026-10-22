@@ -448,6 +448,9 @@ views:
               - entity: binary_sensor.nginxproxymanager_status
                 name: nginx-proxy-manager
                 icon: phu:nginx-proxy-manager
+              - entity: binary_sensor.websites_status
+                name: websites
+                icon: mdi:web
           - type: custom:bubble-card
             card_type: separator
             name: Open

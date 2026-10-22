@@ -1045,6 +1045,14 @@ views:
                   url_path: https://npm.home.amondsen.uk
                 hold_action:
                   action: more-info
+              - entity: binary_sensor.websites_status
+                name: websites
+                icon: mdi:web
+                tap_action:
+                  action: url
+                  url_path: https://homepage.home.amondsen.uk
+                hold_action:
+                  action: more-info
       - type: grid
         cards:
           - type: custom:bubble-card
@@ -1662,37 +1670,38 @@ views:
                   action: url
                   url_path: https://login.tailscale.com/admin/machines
           - type: heading
-            heading: Last seen
+            heading: Online
             heading_style: subtitle
-            icon: mdi:clock-outline
+            icon: mdi:lan-connect
           - type: entities
             card_mod:
               class: glass
             entities:
-              - entity: sensor.pve_last_seen
+              - entity: binary_sensor.bedroom_pve1_connected_to_control
                 name: pve1
                 icon: phu:proxmox
-              - entity: sensor.pve2_last_seen
+              - entity: binary_sensor.pve2_connected_to_control
                 name: pve2
                 icon: phu:proxmox
-              - entity: sensor.adguard_last_seen
+              - entity: binary_sensor.adguard_connected_to_control
                 name: adguard
                 icon: phu:adguard
-              - entity: sensor.home_assistant_last_seen
+              - entity: binary_sensor.bedroom_home_assistant_connected_to_control
                 name: voice-assistant
                 icon: mdi:microphone
-              - entity: sensor.nathanspc_last_seen
+              - entity: binary_sensor.bedroom_nathanspc_connected_to_control
                 name: windows-pc
                 icon: mdi:microsoft-windows
-              - entity: sensor.macbook_pro_last_seen
+              - entity: binary_sensor.macbook_pro_connected_to_control
                 name: macbook-pro
                 icon: phu:apple
-              - entity: sensor.nathaniels_s25_ultra_last_seen
+              - entity: binary_sensor.nathaniels_s25_ultra_connected_to_control
                 name: s25-ultra
                 icon: mdi:cellphone
-              - entity: sensor.nathans_tab_s11_ultra_last_seen
+              - entity: binary_sensor.nathans_tab_s11_ultra_connected_to_control
                 name: tab-s11
                 icon: mdi:tablet
+            state_color: false
           - type: custom:bubble-card
             card_type: separator
             name: Services
