@@ -5,7 +5,8 @@
 
 {%- macro homelab_services() -%}
 {{- ['truenas', 'nextcloud', 'vaultwarden', 'home_assistant', 'adguard', 'homepage', 'pbs', 'ntfy',
-     'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager', 'websites'] | to_json -}}
+     'jellyfin', 'immich', 'jellyfin_stack', 'navidrome', 'nginxproxymanager', 'websites', 'adguard2',
+     'nova', 'guacamole'] | to_json -}}
 {%- endmacro -%}
 
 {#- The public sites on the websites container, checked through Cloudflare (packages/websites.yaml) -#}
@@ -45,6 +46,10 @@
 {#- AdGuard is the tailnet's DNS server, so off Tailscale means names stop resolving away from home -#}
 {%- if is_state('binary_sensor.adguard_connected_to_control', 'off') -%}
   {%- set ns.issues = ns.issues + ['AdGuard is off Tailscale, so remote DNS is down'] -%}
+{%- endif -%}
+{#- AdGuard 2 (pve2) is the tailnet's backup DNS server -#}
+{%- if is_state('binary_sensor.adguard2_connected_to_control', 'off') -%}
+  {%- set ns.issues = ns.issues + ['AdGuard 2 is off Tailscale, so remote DNS has no backup'] -%}
 {%- endif -%}
 {%- for e, label in [('sensor.nas_pool_health', 'NAS pool'), ('sensor.backups_pool_health', 'Backups pool'),
                      ('sensor.media_disk_health', 'Media disk')] if states(e) != 'ONLINE' -%}
